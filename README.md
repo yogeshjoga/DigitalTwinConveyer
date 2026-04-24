@@ -1,4 +1,4 @@
-# BeltGuard AI — Conveyor Belt Digital Twin
+# DigitalTwin Conveyer Belt
 
 > Real-time predictive monitoring, AI-powered defect detection, and maintenance management for industrial conveyor belt systems.
 

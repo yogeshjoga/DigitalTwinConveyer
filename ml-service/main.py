@@ -1,5 +1,5 @@
 """
-BeltGuard AI — ML Prediction Service
+DigitalTwin Conveyer Belt — ML Prediction Service
 FastAPI service providing belt health predictions.
 
 In production, replace the rule-based model with trained scikit-learn / PyTorch models.
@@ -15,7 +15,7 @@ from routers import predict, health, chat
 load_dotenv()
 
 app = FastAPI(
-    title="BeltGuard AI — ML Service",
+    title="DigitalTwin Conveyer Belt — ML Service",
     version="1.0.0",
     description="Predictive intelligence for conveyor belt monitoring",
 )

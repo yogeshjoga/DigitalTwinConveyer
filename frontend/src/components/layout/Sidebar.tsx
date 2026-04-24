@@ -52,12 +52,12 @@ export default function Sidebar() {
         style={{ borderColor: 'var(--color-border)' }}
       >
         <div className="w-8 h-8 rounded-lg bg-brand-500 flex items-center justify-center flex-shrink-0">
-          <span className="text-white font-bold text-sm">BG</span>
+          <span className="text-white font-bold text-sm">DT</span>
         </div>
         {sidebarOpen && (
           <div>
-            <p className="font-semibold text-sm leading-tight text-primary">BeltGuard AI</p>
-            <p className="text-xs text-muted">Monitoring System</p>
+            <p className="font-semibold text-sm leading-tight text-primary">DigitalTwin</p>
+            <p className="text-xs text-muted">Conveyer Belt</p>
           </div>
         )}
       </div>
