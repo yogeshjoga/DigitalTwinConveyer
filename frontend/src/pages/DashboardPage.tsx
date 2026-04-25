@@ -1,9 +1,12 @@
-import { Activity, Thermometer, Zap, Clock, AlertTriangle, Heart } from 'lucide-react';
+import { Activity, Thermometer, Zap, Clock, AlertTriangle, Heart, Download, FileSpreadsheet, FileText } from 'lucide-react';
+import { useState } from 'react';
 import { motion } from 'framer-motion';
 import StatCard from '@/components/ui/StatCard';
 import GaugeChart from '@/components/ui/GaugeChart';
 import RiskBar from '@/components/ui/RiskBar';
 import AlertBadge from '@/components/ui/AlertBadge';
+import MinistryHeader from '@/components/layout/MinistryHeader';
+import { exportPDF, exportExcel, type ReportData } from '@/lib/exportReport';
 import {
   useDashboardSummary,
   useAlerts,
@@ -32,9 +35,37 @@ export default function DashboardPage() {
   const { data: pred }    = useMLPrediction();
   const { data: history } = useSensorHistory(30);
   const theme             = useBeltStore((s) => s.theme);
+  const selectedBelt      = useBeltStore((s) => s.selectedBeltEntry);
   const isDark            = theme === 'dark';
+  const [exportMenu, setExportMenu] = useState(false);
 
   const recentAlerts = alerts?.filter((a) => !a.acknowledged).slice(0, 5) ?? [];
+
+  const buildReportData = (): ReportData => ({
+    beltName: selectedBelt.name,
+    beltId:   selectedBelt.id,
+    generatedAt: new Date().toLocaleString('en-IN', { timeZone: 'Asia/Kolkata' }) + ' IST',
+    summary: {
+      beltHealth:          summary?.beltHealth          ?? 0,
+      beltSpeed:           summary?.beltSpeed           ?? 0,
+      currentLoad:         summary?.currentLoad         ?? 0,
+      temperature:         summary?.temperature         ?? 0,
+      remainingLifeHours:  summary?.remainingLifeHours  ?? 0,
+      activeAlerts:        summary?.activeAlerts        ?? 0,
+      criticalAlerts:      summary?.criticalAlerts      ?? 0,
+      tearProbability:     summary?.tearProbability     ?? 0,
+    },
+    predictions: {
+      remainingLifeDays:   pred?.remainingLifeDays   ?? 0,
+      tearProbability:     pred?.tearProbability     ?? 0,
+      burstRisk:           pred?.burstRisk           ?? 0,
+      overheatRisk:        pred?.overheatRisk        ?? 0,
+      misalignmentRisk:    pred?.misalignmentRisk    ?? 0,
+      nextMaintenanceDays: pred?.nextMaintenanceDays ?? 0,
+      confidenceScore:     pred?.confidenceScore     ?? 0,
+    },
+    alerts: alerts ?? [],
+  });
 
   // Build time labels from actual timestamps when available
   const timeLabels = history?.map((r) =>
@@ -70,9 +101,51 @@ export default function DashboardPage() {
 
   return (
     <div className="space-y-6">
-      <div>
-        <h1 className="text-2xl font-bold text-primary">Dashboard</h1>
-        <p className="text-secondary text-sm mt-1">Real-time belt monitoring overview</p>
+      {/* Ministry of Steel branding */}
+      <MinistryHeader />
+
+      <div className="flex items-center justify-between flex-wrap gap-3">
+        <div>
+          <h1 className="text-2xl font-bold text-primary">Dashboard</h1>
+          <p className="text-secondary text-sm mt-1">Real-time belt monitoring overview</p>
+        </div>
+
+        {/* Download Report button */}
+        <div className="relative">
+          <button
+            onClick={() => setExportMenu((v) => !v)}
+            className="flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-semibold text-white transition-all"
+            style={{ background: 'linear-gradient(135deg, #000080, #0000cc)' }}
+          >
+            <Download size={15} />
+            Download Report
+          </button>
+
+          {exportMenu && (
+            <motion.div
+              initial={{ opacity: 0, y: 6, scale: 0.96 }}
+              animate={{ opacity: 1, y: 0, scale: 1 }}
+              className="absolute right-0 top-full mt-2 z-30 rounded-xl shadow-xl overflow-hidden"
+              style={{ backgroundColor: 'var(--color-panel)', border: '1px solid var(--color-border)', minWidth: 180 }}
+            >
+              <button
+                onClick={() => { exportPDF(buildReportData()); setExportMenu(false); }}
+                className="w-full flex items-center gap-2.5 px-4 py-3 text-sm text-left hover:bg-black/5 dark:hover:bg-white/5 transition-colors"
+              >
+                <FileText size={15} className="text-red-500" />
+                <span className="text-primary font-medium">Export PDF</span>
+              </button>
+              <div style={{ height: 1, backgroundColor: 'var(--color-border)' }} />
+              <button
+                onClick={() => { exportExcel(buildReportData()); setExportMenu(false); }}
+                className="w-full flex items-center gap-2.5 px-4 py-3 text-sm text-left hover:bg-black/5 dark:hover:bg-white/5 transition-colors"
+              >
+                <FileSpreadsheet size={15} className="text-green-600" />
+                <span className="text-primary font-medium">Export Excel / CSV</span>
+              </button>
+            </motion.div>
+          )}
+        </div>
       </div>
 
       {/* KPI cards */}

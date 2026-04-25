@@ -532,7 +532,7 @@ export default function VisionPage() {
                         <div>
                           <span className="text-muted">Bbox</span>
                           <p className="font-mono text-primary mt-0.5">
-                            {d.position.w.toFixed(0)}×{d.position.h.toFixed(0)} px
+                            [{Math.round(d.position.x * 1280)}, {Math.round(d.position.y * 720)}, {Math.max(20, Math.round(d.position.w * 1280))}, {Math.max(15, Math.round(d.position.h * 720))}]
                           </p>
                         </div>
                         <div>

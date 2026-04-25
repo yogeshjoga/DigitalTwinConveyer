@@ -115,10 +115,10 @@ export function startSimulator(intervalMs = 2000) {
         defectType: defect,
         confidence: 0.7 + Math.random() * 0.3,
         position:   {
-          x: Math.random(),
-          y: Math.random(),
-          w: 0.05 + Math.random() * 0.1,
-          h: 0.05 + Math.random() * 0.1,
+          x: 0.05 + Math.random() * 0.85,          // 0–1 normalised belt position
+          y: 0.05 + Math.random() * 0.85,
+          w: 0.04 + Math.random() * 0.18,           // 0–1 normalised width  (~50–280 px at 1280)
+          h: 0.03 + Math.random() * 0.14,           // 0–1 normalised height (~22–120 px at 720)
         },
         severity: defect === 'none' ? 'low' :
                   Math.random() > 0.7 ? 'high' :
