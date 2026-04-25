@@ -38,6 +38,7 @@ export default function DashboardPage() {
   const selectedBelt      = useBeltStore((s) => s.selectedBeltEntry);
   const isDark            = theme === 'dark';
   const [exportMenu, setExportMenu] = useState(false);
+  const [bannerVisible, setBannerVisible] = useState(true);
 
   const recentAlerts = alerts?.filter((a) => !a.acknowledged).slice(0, 5) ?? [];
 
@@ -102,7 +103,7 @@ export default function DashboardPage() {
   return (
     <div className="space-y-6">
       {/* Ministry of Steel branding */}
-      <MinistryHeader />
+      <MinistryHeader visible={bannerVisible} onToggle={() => setBannerVisible((v) => !v)} />
 
       <div className="flex items-center justify-between flex-wrap gap-3">
         <div>
