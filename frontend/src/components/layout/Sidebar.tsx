@@ -12,21 +12,23 @@ import {
   ChevronRight,
   Gauge,
   ClipboardList,
+  Film,
 } from 'lucide-react';
 import { useBeltStore } from '@/store/useBeltStore';
 import { useAlerts } from '@/api/hooks';
 
 const NAV_ITEMS = [
-  { to: '/dashboard',    icon: LayoutDashboard, label: 'Dashboard' },
-  { to: '/digital-twin', icon: Box,             label: 'Digital Twin' },
-  { to: '/load',         icon: Gauge,           label: 'Load Analysis' },
-  { to: '/sensors',      icon: Activity,        label: 'Sensors' },
-  { to: '/thermal',      icon: Thermometer,     label: 'Thermal' },
-  { to: '/vision',       icon: Eye,             label: 'Vision' },
-  { to: '/prediction',   icon: Brain,           label: 'ML Prediction' },
-  { to: '/alerts',       icon: Bell,            label: 'Alerts' },
-  { to: '/work-orders',  icon: ClipboardList,   label: 'Work Orders' },
-  { to: '/config',       icon: Settings,        label: 'Belt Config' },
+  { to: '/dashboard',       icon: LayoutDashboard, label: 'Dashboard' },
+  { to: '/digital-twin',    icon: Box,             label: 'Digital Twin' },
+  { to: '/load',            icon: Gauge,           label: 'Load Analysis' },
+  { to: '/sensors',         icon: Activity,        label: 'Sensors' },
+  { to: '/thermal',         icon: Thermometer,     label: 'Thermal' },
+  { to: '/vision',          icon: Eye,             label: 'Vision' },
+  { to: '/video-analytics', icon: Film,            label: 'Video Analytics' },
+  { to: '/prediction',      icon: Brain,           label: 'ML Prediction' },
+  { to: '/alerts',          icon: Bell,            label: 'Alerts' },
+  { to: '/work-orders',     icon: ClipboardList,   label: 'Work Orders' },
+  { to: '/config',          icon: Settings,        label: 'Belt Config' },
 ];
 
 export default function Sidebar() {
