@@ -5,7 +5,6 @@ import StatCard from '@/components/ui/StatCard';
 import GaugeChart from '@/components/ui/GaugeChart';
 import RiskBar from '@/components/ui/RiskBar';
 import AlertBadge from '@/components/ui/AlertBadge';
-import MinistryHeader from '@/components/layout/MinistryHeader';
 import { exportPDF, exportExcel, type ReportData } from '@/lib/exportReport';
 import {
   useDashboardSummary,
@@ -101,9 +100,6 @@ export default function DashboardPage() {
 
   return (
     <div className="space-y-6">
-      {/* Ministry of Steel branding */}
-      <MinistryHeader />
-
       <div className="flex items-center justify-between flex-wrap gap-3">
         <div>
           <h1 className="text-2xl font-bold text-primary">Dashboard</h1>
