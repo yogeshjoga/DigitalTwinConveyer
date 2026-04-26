@@ -13,6 +13,7 @@ import ConveyorBelt from './ConveyorBelt';
 import ThermalOverlay from './ThermalOverlay';
 import DefectMarker from './DefectMarker';
 import MaterialFlow from './MaterialFlow';
+import { useBeltStore } from '@/store/useBeltStore';
 
 export type CameraPreset = 'perspective' | 'front' | 'side' | 'top' | 'bottom';
 
@@ -54,6 +55,7 @@ function SceneContent({
 }: Required<BeltSceneProps>) {
   const { camera } = useThree();
   const controlsRef = useRef<any>(null);
+  const selectedBelt = useBeltStore((s) => s.selectedBeltEntry);
 
   // Animate camera to preset when it changes
   useEffect(() => {
@@ -130,7 +132,7 @@ function SceneContent({
       )}
 
       <Text position={[0, 2.5, -beltLength / 2 - 1]} fontSize={0.4} color="#94a3b8" anchorX="center">
-        BeltGuard AI — Digital Twin
+        {selectedBelt.name}  ·  {selectedBelt.id}
       </Text>
 
       <OrbitControls
