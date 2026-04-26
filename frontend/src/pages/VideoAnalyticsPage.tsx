@@ -122,6 +122,47 @@ function FrameCard({ event, selected, onClick }: { event: VideoEvent; selected: 
           <span className="text-[10px] font-mono" style={{ color:"var(--text-secondary)" }}>{event.beltPosition}%</span>
           <span className="text-[10px] text-muted ml-auto">{event.material}</span>
         </div>
+
+        {/* ── Physical location tag ── */}
+        {(() => {
+          const BELT_LEN = 100;
+          const BELT_W   = 1.2;
+          const fromLeft  = (event.beltPosition / 100) * BELT_LEN;
+          const fromRight = BELT_LEN - fromLeft;
+          // derive width offsets from bbox y-position (normalised 0-1 across 720px → 1.2m)
+          const yNorm    = event.bbox[1] / 720;
+          const wNorm    = event.bbox[3] / 720;
+          const leftOff  = Math.min(yNorm * BELT_W, BELT_W);
+          const defW     = Math.max(0.01, wNorm * BELT_W);
+          const rightOff = Math.max(0, BELT_W - leftOff - defW);
+          return (
+            <div className="rounded-lg p-2 space-y-1.5 mt-0.5" style={{ background: color + "0d", border: `1px solid ${color}33` }}>
+              <p className="text-[9px] font-bold uppercase tracking-wider" style={{ color }}>📍 Exact Location</p>
+              <div className="grid grid-cols-2 gap-1">
+                <div className="rounded px-1.5 py-1" style={{ background: "var(--color-surface)" }}>
+                  <p className="text-[8px] text-muted">← From Head</p>
+                  <p className="text-[10px] font-mono font-bold" style={{ color }}>{fromLeft.toFixed(1)} m</p>
+                </div>
+                <div className="rounded px-1.5 py-1" style={{ background: "var(--color-surface)" }}>
+                  <p className="text-[8px] text-muted">From Tail →</p>
+                  <p className="text-[10px] font-mono font-bold" style={{ color }}>{fromRight.toFixed(1)} m</p>
+                </div>
+                <div className="rounded px-1.5 py-1" style={{ background: "var(--color-surface)" }}>
+                  <p className="text-[8px] text-muted">← Left edge</p>
+                  <p className="text-[10px] font-mono font-bold" style={{ color }}>{leftOff.toFixed(2)} m</p>
+                </div>
+                <div className="rounded px-1.5 py-1" style={{ background: "var(--color-surface)" }}>
+                  <p className="text-[8px] text-muted">Right edge →</p>
+                  <p className="text-[10px] font-mono font-bold" style={{ color }}>{rightOff.toFixed(2)} m</p>
+                </div>
+              </div>
+              <div className="rounded px-1.5 py-1" style={{ background: "var(--color-surface)" }}>
+                <p className="text-[8px] text-muted">Defect span</p>
+                <p className="text-[10px] font-mono font-bold" style={{ color }}>{defW.toFixed(2)} m wide</p>
+              </div>
+            </div>
+          );
+        })()}
       </div>
     </motion.div>
   );
@@ -181,6 +222,55 @@ function VideoPlayerPanel({ event, videoRef, videoPlaying, setVideoPlaying, onCl
           <p className="text-[10px] text-muted mb-0.5">Captured At</p>
           <p className="text-xs font-mono text-secondary">{new Date(event.timestamp).toLocaleString()}</p>
         </div>
+
+        {/* ── Physical location measurement ── */}
+        {(() => {
+          const BELT_LEN = 100;
+          const BELT_W   = 1.2;
+          const fromLeft  = (event.beltPosition / 100) * BELT_LEN;
+          const fromRight = BELT_LEN - fromLeft;
+          const yNorm     = event.bbox[1] / 720;
+          const wNorm     = event.bbox[3] / 720;
+          const leftOff   = Math.min(yNorm * BELT_W, BELT_W);
+          const defW      = Math.max(0.01, wNorm * BELT_W);
+          const rightOff  = Math.max(0, BELT_W - leftOff - defW);
+          return (
+            <div className="rounded-xl p-3 space-y-2" style={{ background: color + "0d", border: `1px solid ${color}44` }}>
+              <p className="text-[10px] font-bold uppercase tracking-wider flex items-center gap-1.5" style={{ color }}>
+                <svg width="12" height="12" viewBox="0 0 12 12" fill="none">
+                  <circle cx="6" cy="6" r="5" stroke={color} strokeWidth="1.2"/>
+                  <path d="M6 3v3l2 1" stroke={color} strokeWidth="1.2" strokeLinecap="round"/>
+                </svg>
+                Exact Physical Location
+              </p>
+              <div className="grid grid-cols-2 gap-1.5">
+                <div className="rounded-lg px-2.5 py-2" style={{ backgroundColor:"var(--color-surface)" }}>
+                  <p className="text-[9px] text-muted">← From Head End</p>
+                  <p className="text-sm font-mono font-bold" style={{ color }}>{fromLeft.toFixed(1)} m</p>
+                </div>
+                <div className="rounded-lg px-2.5 py-2" style={{ backgroundColor:"var(--color-surface)" }}>
+                  <p className="text-[9px] text-muted">From Tail End →</p>
+                  <p className="text-sm font-mono font-bold" style={{ color }}>{fromRight.toFixed(1)} m</p>
+                </div>
+                <div className="rounded-lg px-2.5 py-2" style={{ backgroundColor:"var(--color-surface)" }}>
+                  <p className="text-[9px] text-muted">← Left Edge</p>
+                  <p className="text-sm font-mono font-bold" style={{ color }}>{leftOff.toFixed(2)} m</p>
+                </div>
+                <div className="rounded-lg px-2.5 py-2" style={{ backgroundColor:"var(--color-surface)" }}>
+                  <p className="text-[9px] text-muted">Right Edge →</p>
+                  <p className="text-sm font-mono font-bold" style={{ color }}>{rightOff.toFixed(2)} m</p>
+                </div>
+              </div>
+              <div className="rounded-lg px-2.5 py-2" style={{ backgroundColor:"var(--color-surface)" }}>
+                <p className="text-[9px] text-muted mb-0.5">Defect Span</p>
+                <p className="text-xs font-mono font-bold" style={{ color }}>{defW.toFixed(2)} m wide · {(Math.max(0.01, event.bbox[2] / 1280 * BELT_LEN * 0.05)).toFixed(2)} m along belt</p>
+              </div>
+              <p className="text-[9px] text-muted text-center pt-0.5">
+                Walk to <span className="font-bold" style={{ color }}>{fromLeft.toFixed(1)} m</span> from head pulley, <span className="font-bold" style={{ color }}>{leftOff.toFixed(2)} m</span> from left edge
+              </p>
+            </div>
+          );
+        })()}
       </div>
     </motion.div>
   );

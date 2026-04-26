@@ -51,18 +51,21 @@ DigitalTwin/
 ```bash
 cd backend
 npm install
+npm run dev
 ```
 
 **Frontend**
 ```bash
 cd frontend
 npm install
+npm run dev
 ```
 
 **ML Service**
 ```bash
 cd ml-service
 pip install -r requirements.txt
+python main.py
 ```
 
 ---

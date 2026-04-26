@@ -1,12 +1,14 @@
 import { useState, useRef, useEffect } from 'react';
 import { useVisionDetections } from '@/api/hooks';
+import { useLocation } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
-import type { DefectType } from '@/types';
+import type { DefectType, VisionDetection } from '@/types';
 import {
   Scissors, Circle, AlignLeft, Layers,
   LayoutGrid, Camera, CheckCircle2, ZoomIn, X,
   VolumeX, Wifi,
 } from 'lucide-react';
+import DetectionDetailModal from '@/components/vision/DetectionDetailModal';
 
 // ── Import all defect images ───────────────────────────────────────────────────
 // Tears
@@ -305,6 +307,21 @@ export default function VisionPage() {
   const [severityFilter, setSeverityFilter] = useState<'all' | 'high' | 'medium' | 'low'>('all');
   const [lightbox, setLightbox]             = useState<{ src: string; alt: string } | null>(null);
   const [videoLightbox, setVideoLightbox]   = useState<{ label: string; angle: string; color: string; videoMode: 'full' | 'left' | 'right' } | null>(null);
+  const [selectedDetection, setSelectedDetection] = useState<VisionDetection | null>(null);
+
+  // Auto-open modal when navigated from Digital Twin with a detection id
+  const location = useLocation();
+  useEffect(() => {
+    const state = location.state as { openDetectionId?: string } | null;
+    if (state?.openDetectionId && detections) {
+      const found = detections.find((d) => d.id === state.openDetectionId);
+      if (found) {
+        setSelectedDetection(found);
+        // Clear the state so refreshing doesn't re-open
+        window.history.replaceState({}, '');
+      }
+    }
+  }, [location.state, detections]);
 
   const allActive = detections?.filter((d) => d.defectType !== 'none') ?? [];
 
@@ -460,8 +477,9 @@ export default function VisionPage() {
                     animate={{ opacity: 1, scale: 1 }}
                     exit={{ opacity: 0, scale: 0.93 }}
                     transition={{ delay: i * 0.04 }}
-                    className="rounded-xl border overflow-hidden"
+                    className="rounded-xl border overflow-hidden cursor-pointer group/card hover:shadow-lg transition-shadow"
                     style={{ borderColor: meta.color + '33' }}
+                    onClick={() => setSelectedDetection(d)}
                   >
                     {/* Image area */}
                     <div className="h-44 relative overflow-hidden group" style={{ background: meta.color + '0d' }}>
@@ -472,16 +490,19 @@ export default function VisionPage() {
                             alt={`${meta.label} defect`}
                             className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-105"
                           />
-                          {/* Zoom overlay on hover */}
+                          {/* View Details overlay on hover */}
                           <button
-                            onClick={() => setLightbox({ src: imgSrc, alt: `${meta.label} — ${d.id}` })}
-                            className="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity"
-                            style={{ background: 'rgba(0,0,0,0.45)' }}
+                            onClick={(e) => { e.stopPropagation(); setSelectedDetection(d); }}
+                            className="absolute inset-0 flex items-center justify-center opacity-0 group-hover/card:opacity-100 transition-opacity"
+                            style={{ background: 'rgba(0,0,0,0.5)' }}
                           >
-                            <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-full text-white text-xs font-semibold"
-                              style={{ background: 'rgba(255,255,255,0.15)', backdropFilter: 'blur(4px)', border: '1px solid rgba(255,255,255,0.25)' }}>
-                              <ZoomIn size={13} />
-                              View full image
+                            <div className="flex flex-col items-center gap-2">
+                              <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-full text-white text-xs font-semibold"
+                                style={{ background: meta.color, border: '1px solid rgba(255,255,255,0.25)' }}>
+                                <ZoomIn size={13} />
+                                View Full Details
+                              </div>
+                              <span className="text-[10px] text-white/60">Click to open inspection panel</span>
                             </div>
                           </button>
                         </>
@@ -524,24 +545,85 @@ export default function VisionPage() {
                           </div>
                         </div>
                         <div>
-                          <span className="text-muted">Belt Position</span>
-                          <p className="font-mono font-semibold text-primary mt-0.5">
-                            {(d.position.x * 100).toFixed(0)}% along
-                          </p>
-                        </div>
-                        <div>
-                          <span className="text-muted">Bbox</span>
-                          <p className="font-mono text-primary mt-0.5">
-                            [{Math.round(d.position.x * 1280)}, {Math.round(d.position.y * 720)}, {Math.max(20, Math.round(d.position.w * 1280))}, {Math.max(15, Math.round(d.position.h * 720))}]
-                          </p>
-                        </div>
-                        <div>
                           <span className="text-muted">Detected</span>
                           <p className="font-semibold text-primary mt-0.5">
                             {new Date(d.timestamp).toLocaleTimeString()}
                           </p>
                         </div>
                       </div>
+
+                      {/* ── Physical location measurement tag ── */}
+                      {(() => {
+                        const BELT_LEN = 100;   // metres
+                        const BELT_W   = 1.2;   // metres
+                        const fromLeft  = d.position.x * BELT_LEN;
+                        const fromRight = BELT_LEN - fromLeft;
+                        const defW      = Math.max(0.01, d.position.w * BELT_W);
+                        const leftOff   = d.position.y * BELT_W;
+                        const rightOff  = BELT_W - leftOff - defW;
+                        return (
+                          <div
+                            className="mt-2.5 rounded-lg p-2.5 space-y-2"
+                            style={{ background: meta.color + '0d', border: `1px solid ${meta.color}33` }}
+                          >
+                            <div className="flex items-center gap-1.5 mb-1">
+                              <svg width="11" height="11" viewBox="0 0 11 11" fill="none">
+                                <path d="M1 5.5h9M5.5 1v9" stroke={meta.color} strokeWidth="1.5" strokeLinecap="round"/>
+                                <circle cx="5.5" cy="5.5" r="2" stroke={meta.color} strokeWidth="1.2"/>
+                              </svg>
+                              <span className="text-[10px] font-bold uppercase tracking-wide" style={{ color: meta.color }}>
+                                Exact Location
+                              </span>
+                            </div>
+
+                            {/* Length axis */}
+                            <div className="space-y-1">
+                              <p className="text-[9px] text-muted uppercase tracking-wider">Along Belt (Length)</p>
+                              <div className="flex items-center gap-2">
+                                <div className="flex items-center gap-1 flex-1 px-2 py-1 rounded" style={{ background: 'var(--color-surface)' }}>
+                                  <span className="text-[9px] text-muted">← From Head</span>
+                                  <span className="font-mono font-bold text-xs ml-auto" style={{ color: meta.color }}>
+                                    {fromLeft.toFixed(1)} m
+                                  </span>
+                                </div>
+                                <div className="flex items-center gap-1 flex-1 px-2 py-1 rounded" style={{ background: 'var(--color-surface)' }}>
+                                  <span className="text-[9px] text-muted">From Tail →</span>
+                                  <span className="font-mono font-bold text-xs ml-auto" style={{ color: meta.color }}>
+                                    {fromRight.toFixed(1)} m
+                                  </span>
+                                </div>
+                              </div>
+                            </div>
+
+                            {/* Width axis */}
+                            <div className="space-y-1">
+                              <p className="text-[9px] text-muted uppercase tracking-wider">Across Belt (Width)</p>
+                              <div className="flex items-center gap-2">
+                                <div className="flex items-center gap-1 flex-1 px-2 py-1 rounded" style={{ background: 'var(--color-surface)' }}>
+                                  <span className="text-[9px] text-muted">← Left edge</span>
+                                  <span className="font-mono font-bold text-xs ml-auto" style={{ color: meta.color }}>
+                                    {leftOff.toFixed(2)} m
+                                  </span>
+                                </div>
+                                <div className="flex items-center gap-1 flex-1 px-2 py-1 rounded" style={{ background: 'var(--color-surface)' }}>
+                                  <span className="text-[9px] text-muted">Right edge →</span>
+                                  <span className="font-mono font-bold text-xs ml-auto" style={{ color: meta.color }}>
+                                    {Math.max(0, rightOff).toFixed(2)} m
+                                  </span>
+                                </div>
+                              </div>
+                            </div>
+
+                            {/* Defect size */}
+                            <div className="flex items-center gap-1 px-2 py-1 rounded" style={{ background: 'var(--color-surface)' }}>
+                              <span className="text-[9px] text-muted">Defect span</span>
+                              <span className="font-mono font-bold text-xs ml-auto" style={{ color: meta.color }}>
+                                {defW.toFixed(2)} m wide · {(Math.max(0.01, d.position.h * BELT_W)).toFixed(2)} m long
+                              </span>
+                            </div>
+                          </div>
+                        );
+                      })()}
 
                       <div className="mt-2 pt-2 border-t flex items-center justify-between" style={{ borderColor: 'var(--color-border)' }}>
                         <span className="text-[10px] text-muted font-mono">{d.id}</span>
@@ -591,6 +673,13 @@ export default function VisionPage() {
             color={videoLightbox.color}
             videoMode={videoLightbox.videoMode}
             onClose={() => setVideoLightbox(null)}
+          />
+        )}
+        {selectedDetection && (
+          <DetectionDetailModal
+            detection={selectedDetection}
+            imgSrc={selectedDetection.imageUrl ?? pickImage(selectedDetection.defectType, selectedDetection.id)}
+            onClose={() => setSelectedDetection(null)}
           />
         )}
       </AnimatePresence>
