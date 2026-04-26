@@ -1,6 +1,6 @@
 import { Activity, Thermometer, Zap, Clock, AlertTriangle, Heart, Download, FileSpreadsheet, FileText } from 'lucide-react';
-import { useState } from 'react';
-import { motion } from 'framer-motion';
+import { useState, useMemo, useEffect, useRef } from 'react';
+import { motion, AnimatePresence } from 'framer-motion';
 import StatCard from '@/components/ui/StatCard';
 import GaugeChart from '@/components/ui/GaugeChart';
 import RiskBar from '@/components/ui/RiskBar';
@@ -11,6 +11,7 @@ import {
   useAlerts,
   useMLPrediction,
   useSensorHistory,
+  useLiveSensors,
 } from '@/api/hooks';
 import {
   Chart as ChartJS,
@@ -25,18 +26,149 @@ import {
 import { Line } from 'react-chartjs-2';
 import { useBeltStore } from '@/store/useBeltStore';
 import { lineChartOptions } from '@/lib/chartConfig';
+import type { BeltEntry } from '@/data/beltCatalog';
+
+ChartJS.register(CategoryScale, LinearScale, PointElement, LineElement, Filler, Tooltip, Legend);
+
+// ── Belt-specific characteristic modifiers ────────────────────────────────────
+// Each belt type has different operating characteristics that affect sensor readings.
+// These multipliers are applied on top of the live sensor baseline.
+function getBeltModifiers(belt: BeltEntry) {
+  const mat = belt.material.toLowerCase();
+  const area = belt.area.toLowerCase();
+
+  // Temperature modifier — hot materials run hotter
+  const tempOffset =
+    mat.includes('hot sinter') || mat.includes('hot slag') ? 35 :
+    mat.includes('sinter')     ? 20 :
+    mat.includes('slag')       ? 25 :
+    mat.includes('coke')       ? 15 :
+    mat.includes('coal')       ? 5  : 0;
+
+  // Load modifier — dense materials carry more load
+  const loadMult =
+    mat.includes('burden') || mat.includes('charge') ? 1.35 :
+    mat.includes('iron ore') || mat.includes('lump ore') ? 1.25 :
+    mat.includes('sinter') || mat.includes('slag')   ? 1.20 :
+    mat.includes('coal') || mat.includes('coke')     ? 1.10 :
+    mat.includes('pellet')                           ? 1.15 :
+    mat.includes('limestone') || mat.includes('dolomite') ? 1.05 : 1.0;
+
+  // Vibration modifier — inclined/decline belts vibrate more
+  const vibMult =
+    area.includes('blast furnace') ? 1.3 :
+    area.includes('sinter')        ? 1.2 :
+    area.includes('slag')          ? 1.25 :
+    belt.id.includes('INCLINE') || belt.id.includes('DECLINE') ? 1.4 : 1.0;
+
+  // Speed modifier — some belts run slower by design
+  const speedMult =
+    area.includes('blast furnace') ? 0.85 :
+    area.includes('sinter')        ? 0.90 :
+    mat.includes('hot')            ? 0.80 : 1.0;
+
+  // Health baseline — older/harsher belts start lower
+  const healthOffset =
+    mat.includes('hot sinter') || mat.includes('hot slag') ? -15 :
+    mat.includes('slag') || mat.includes('burden')         ? -10 :
+    mat.includes('coal') || mat.includes('coke')           ? -5  : 0;
+
+  // Remaining life modifier
+  const lifeMult =
+    mat.includes('hot') ? 0.65 :
+    mat.includes('slag') || mat.includes('burden') ? 0.75 :
+    mat.includes('sinter') ? 0.80 : 1.0;
+
+  return { tempOffset, loadMult, vibMult, speedMult, healthOffset, lifeMult };
+}
+
+// Seeded pseudo-random for stable per-belt variation
+function seededRand(seed: string, offset = 0): number {
+  const n = seed.split('').reduce((a, c) => a + c.charCodeAt(0), offset);
+  return ((Math.sin(n) * 43758.5453) % 1 + 1) / 2; // 0–1
+}
+
+// ── Hook: belt-aware summary ──────────────────────────────────────────────────
+function useBeltAwareSummary(belt: BeltEntry) {
+  const { data: rawSummary } = useDashboardSummary();
+  const { data: rawSensors } = useLiveSensors();
+  const mods = useMemo(() => getBeltModifiers(belt), [belt.id]);
+
+  return useMemo(() => {
+    if (!rawSummary) return null;
+
+    const r = seededRand(belt.id);
+    const r2 = seededRand(belt.id, 7);
+
+    const temperature    = Math.min(120, (rawSensors?.temperature ?? rawSummary.temperature) + mods.tempOffset + r * 4 - 2);
+    const currentLoad    = Math.min(500, (rawSensors?.udl ?? rawSummary.currentLoad) * mods.loadMult * (0.92 + r2 * 0.16));
+    const beltSpeed      = Math.max(0.5, (rawSensors?.beltSpeed ?? rawSummary.beltSpeed) * mods.speedMult);
+    const vibration      = (rawSensors?.vibration ?? 2) * mods.vibMult;
+
+    // Recalculate health with belt-specific factors
+    const loadScore   = Math.max(0, 100 - (currentLoad / 500) * 100);
+    const tempScore   = Math.max(0, 100 - ((temperature - 20) / 100) * 100);
+    const vibScore    = Math.max(0, 100 - (vibration / 20) * 100);
+    const alertPenalty = Math.min((rawSummary.criticalAlerts ?? 0) * 10, 40);
+    const beltHealth  = Math.max(0, Math.min(100,
+      Math.round(((loadScore + tempScore + vibScore) / 3) - alertPenalty + mods.healthOffset)
+    ));
+
+    const remainingLifeHours = Math.max(0, Math.round(beltHealth * 20 * mods.lifeMult));
+    const tearProbability    = Math.max(0, Math.min(1, (100 - beltHealth) / 100));
+
+    return {
+      ...rawSummary,
+      beltHealth,
+      temperature:        Math.round(temperature * 10) / 10,
+      currentLoad:        Math.round(currentLoad * 10) / 10,
+      beltSpeed:          Math.round(beltSpeed * 100) / 100,
+      remainingLifeHours,
+      tearProbability,
+    };
+  }, [rawSummary, rawSensors, belt.id, mods]);
+}
+
+// ── Hook: belt-aware sensor history ──────────────────────────────────────────
+function useBeltAwareHistory(belt: BeltEntry) {
+  const { data: rawHistory } = useSensorHistory(30);
+  const mods = useMemo(() => getBeltModifiers(belt), [belt.id]);
+
+  return useMemo(() => {
+    if (!rawHistory) return [];
+    return rawHistory.map((r, i) => ({
+      ...r,
+      udl:         r.udl * mods.loadMult * (0.95 + seededRand(belt.id, i) * 0.1),
+      temperature: r.temperature + mods.tempOffset,
+      beltSpeed:   r.beltSpeed * mods.speedMult,
+      vibration:   r.vibration * mods.vibMult,
+    }));
+  }, [rawHistory, belt.id, mods]);
+}
 
 ChartJS.register(CategoryScale, LinearScale, PointElement, LineElement, Filler, Tooltip, Legend);
 
 export default function DashboardPage() {
-  const { data: summary } = useDashboardSummary();
   const { data: alerts }  = useAlerts();
   const { data: pred }    = useMLPrediction();
-  const { data: history } = useSensorHistory(30);
   const theme             = useBeltStore((s) => s.theme);
   const selectedBelt      = useBeltStore((s) => s.selectedBeltEntry);
   const isDark            = theme === 'dark';
   const [exportMenu, setExportMenu] = useState(false);
+
+  // Belt-reactive data
+  const summary = useBeltAwareSummary(selectedBelt);
+  const history = useBeltAwareHistory(selectedBelt);
+
+  // Flash animation key — changes when belt switches so cards animate in
+  const [flashKey, setFlashKey] = useState(selectedBelt.id);
+  const prevBeltId = useRef(selectedBelt.id);
+  useEffect(() => {
+    if (prevBeltId.current !== selectedBelt.id) {
+      prevBeltId.current = selectedBelt.id;
+      setFlashKey(selectedBelt.id);
+    }
+  }, [selectedBelt.id]);
 
   const recentAlerts = alerts?.filter((a) => !a.acknowledged).slice(0, 5) ?? [];
 
@@ -66,7 +198,6 @@ export default function DashboardPage() {
     alerts: alerts ?? [],
   });
 
-  // Build time labels from actual timestamps when available
   const timeLabels = history?.map((r) =>
     new Date(r.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' })
   ) ?? [];
@@ -77,13 +208,13 @@ export default function DashboardPage() {
       {
         label: 'UDL',
         data: history?.map((r) => r.udl) ?? [],
-        borderColor: '#27a372',
-        backgroundColor: 'rgba(39,163,114,0.1)',
+        borderColor: selectedBelt.color,
+        backgroundColor: selectedBelt.color + '18',
         fill: true,
         tension: 0.4,
         pointRadius: 0,
         pointHoverRadius: 5,
-        pointHoverBackgroundColor: '#27a372',
+        pointHoverBackgroundColor: selectedBelt.color,
         pointHoverBorderColor: '#ffffff',
         pointHoverBorderWidth: 2,
         borderWidth: 2,
@@ -103,7 +234,9 @@ export default function DashboardPage() {
       <div className="flex items-center justify-between flex-wrap gap-3">
         <div>
           <h1 className="text-2xl font-bold text-primary">Dashboard</h1>
-          <p className="text-secondary text-sm mt-1">Real-time belt monitoring overview</p>
+          <p className="text-secondary text-sm mt-0.5">
+            Real-time monitoring — <span style={{ color: selectedBelt.color }}>{selectedBelt.name}</span>
+          </p>
         </div>
 
         {/* Download Report button */}
@@ -144,27 +277,40 @@ export default function DashboardPage() {
         </div>
       </div>
 
-      {/* KPI cards */}
-      <div className="grid grid-cols-2 lg:grid-cols-3 xl:grid-cols-6 gap-4">
-        <StatCard label="Belt Health"    value={summary?.beltHealth ?? '—'}               unit="%" icon={Heart}
-          status={(summary?.beltHealth ?? 100) >= 80 ? 'ok' : (summary?.beltHealth ?? 100) >= 50 ? 'warning' : 'critical'} />
-        <StatCard label="Belt Speed"     value={summary?.beltSpeed?.toFixed(1) ?? '—'}    unit="m/s" icon={Activity} status="ok" />
-        <StatCard label="Current Load"   value={summary?.currentLoad?.toFixed(0) ?? '—'}  unit="kg/m" icon={Zap}
-          status={(summary?.currentLoad ?? 0) > 450 ? 'critical' : (summary?.currentLoad ?? 0) > 350 ? 'warning' : 'ok'} />
-        <StatCard label="Temperature"    value={summary?.temperature?.toFixed(0) ?? '—'}  unit="°C" icon={Thermometer}
-          status={(summary?.temperature ?? 0) > 80 ? 'critical' : (summary?.temperature ?? 0) > 60 ? 'warning' : 'ok'} />
-        <StatCard label="Remaining Life" value={summary?.remainingLifeHours?.toFixed(0) ?? '—'} unit="hrs" icon={Clock}
-          status={(summary?.remainingLifeHours ?? 999) < 100 ? 'critical' : (summary?.remainingLifeHours ?? 999) < 300 ? 'warning' : 'ok'} />
-        <StatCard label="Active Alerts"  value={summary?.activeAlerts ?? '—'} icon={AlertTriangle}
-          status={(summary?.criticalAlerts ?? 0) > 0 ? 'critical' : (summary?.activeAlerts ?? 0) > 0 ? 'warning' : 'ok'}
-          subtitle={`${summary?.criticalAlerts ?? 0} critical`} />
-      </div>
+      {/* KPI cards — re-animate on belt change */}
+      <AnimatePresence mode="wait">
+        <motion.div
+          key={flashKey}
+          initial={{ opacity: 0, y: 8 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.25 }}
+          className="grid grid-cols-2 lg:grid-cols-3 xl:grid-cols-6 gap-4"
+        >
+          <StatCard label="Belt Health"    value={summary?.beltHealth ?? '—'}               unit="%" icon={Heart}
+            status={(summary?.beltHealth ?? 100) >= 80 ? 'ok' : (summary?.beltHealth ?? 100) >= 50 ? 'warning' : 'critical'} />
+          <StatCard label="Belt Speed"     value={summary?.beltSpeed?.toFixed(1) ?? '—'}    unit="m/s" icon={Activity} status="ok" />
+          <StatCard label="Current Load"   value={summary?.currentLoad?.toFixed(0) ?? '—'}  unit="kg/m" icon={Zap}
+            status={(summary?.currentLoad ?? 0) > 450 ? 'critical' : (summary?.currentLoad ?? 0) > 350 ? 'warning' : 'ok'} />
+          <StatCard label="Temperature"    value={summary?.temperature?.toFixed(0) ?? '—'}  unit="°C" icon={Thermometer}
+            status={(summary?.temperature ?? 0) > 80 ? 'critical' : (summary?.temperature ?? 0) > 60 ? 'warning' : 'ok'} />
+          <StatCard label="Remaining Life" value={summary?.remainingLifeHours?.toFixed(0) ?? '—'} unit="hrs" icon={Clock}
+            status={(summary?.remainingLifeHours ?? 999) < 100 ? 'critical' : (summary?.remainingLifeHours ?? 999) < 300 ? 'warning' : 'ok'} />
+          <StatCard label="Active Alerts"  value={summary?.activeAlerts ?? '—'} icon={AlertTriangle}
+            status={(summary?.criticalAlerts ?? 0) > 0 ? 'critical' : (summary?.activeAlerts ?? 0) > 0 ? 'warning' : 'ok'}
+            subtitle={`${summary?.criticalAlerts ?? 0} critical`} />
+        </motion.div>
+      </AnimatePresence>
 
       {/* Main grid */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         <div className="lg:col-span-2 card">
-          <h2 className="text-sm font-semibold text-secondary mb-1">Load Trend (30 min)</h2>
-          <p className="text-xs text-muted mb-4">Hover over the chart to see UDL values at each point</p>
+          <div className="flex items-center justify-between mb-1">
+            <h2 className="text-sm font-semibold text-secondary">Load Trend (30 min)</h2>
+            <span className="text-xs font-medium px-2 py-0.5 rounded-full" style={{ background: selectedBelt.color + '18', color: selectedBelt.color }}>
+              {selectedBelt.name}
+            </span>
+          </div>
+          <p className="text-xs text-muted mb-4">UDL (kg/m) — hover to see values</p>
           <div className="h-48">
             <Line data={loadChartData} options={chartOptions} />
           </div>

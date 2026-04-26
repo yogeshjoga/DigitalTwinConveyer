@@ -1,75 +1,95 @@
 import { Bell, Wifi, WifiOff, Sun, Moon } from 'lucide-react';
+import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useDashboardSummary, useAlerts } from '@/api/hooks';
 import { useBeltStore } from '@/store/useBeltStore';
 import BeltSelector from './BeltSelector';
 
 export default function Topbar() {
-  const navigate      = useNavigate();
-  const { data: summary } = useDashboardSummary();
-  const { data: alerts }  = useAlerts();
-  const theme             = useBeltStore((s) => s.theme);
-  const toggleTheme       = useBeltStore((s) => s.toggleTheme);
-  const selectedBelt      = useBeltStore((s) => s.selectedBeltEntry);
+  const navigate           = useNavigate();
+  const { data: summary }  = useDashboardSummary();
+  const { data: alerts }   = useAlerts();
+  const theme              = useBeltStore((s) => s.theme);
+  const toggleTheme        = useBeltStore((s) => s.toggleTheme);
+  const selectedBelt       = useBeltStore((s) => s.selectedBeltEntry);
 
   const unread   = alerts?.filter((a) => !a.acknowledged).length ?? 0;
   const isOnline = true;
 
+  // Live clock
+  const [time, setTime] = useState(() => new Date().toLocaleTimeString());
+  useEffect(() => {
+    const id = setInterval(() => setTime(new Date().toLocaleTimeString()), 1000);
+    return () => clearInterval(id);
+  }, []);
+
+  const healthColor =
+    (summary?.beltHealth ?? 100) >= 80 ? '#22c55e' :
+    (summary?.beltHealth ?? 100) >= 50 ? '#f59e0b' : '#ef4444';
+
   return (
     <header
-      className="h-14 flex items-center justify-between px-4 flex-shrink-0 border-b transition-colors gap-4"
+      className="h-14 flex items-center flex-shrink-0 border-b transition-colors"
       style={{ backgroundColor: 'var(--color-panel)', borderColor: 'var(--color-border)' }}
     >
-      {/* ── Left: health badge ──────────────────────────────────────────── */}
-      <div className="flex items-center gap-2 flex-shrink-0 min-w-0">
-        {summary && (
-          <span
-            className={`text-xs px-2 py-0.5 rounded-full font-medium whitespace-nowrap ${
-              summary.beltHealth >= 80
-                ? 'bg-green-500/20 text-green-600 dark:text-green-400'
-                : summary.beltHealth >= 50
-                ? 'bg-amber-500/20 text-amber-600 dark:text-amber-400'
-                : 'bg-red-500/20 text-red-600 dark:text-red-400'
-            }`}
-          >
-            Health {summary.beltHealth}%
+      {/* ── LEFT: Belt name + selector ──────────────────────────────────── */}
+      <div className="flex items-center gap-3 px-4 flex-shrink-0 min-w-0" style={{ flex: '0 0 auto', maxWidth: '55%' }}>
+        {/* Belt name headline */}
+        <div className="flex flex-col min-w-0">
+          <div className="flex items-center gap-2 min-w-0">
+            <span
+              className="w-2 h-2 rounded-full flex-shrink-0"
+              style={{ backgroundColor: selectedBelt.color }}
+            />
+            <span className="text-sm font-bold text-primary truncate leading-tight">
+              {selectedBelt.name}
+            </span>
+            <span
+              className="text-[10px] font-mono px-1.5 py-0.5 rounded font-semibold flex-shrink-0 hidden sm:inline"
+              style={{ background: selectedBelt.color + '18', color: selectedBelt.color }}
+            >
+              {selectedBelt.id}
+            </span>
+          </div>
+          <span className="text-[10px] text-muted leading-tight truncate hidden sm:block">
+            {selectedBelt.material} · {selectedBelt.area}
           </span>
-        )}
-        {/* Material type pill */}
-        <span
-          className="text-[10px] px-2 py-0.5 rounded-full font-medium hidden md:inline-flex"
-          style={{
-            background: selectedBelt.color + '18',
-            color: selectedBelt.color,
-            border: `1px solid ${selectedBelt.color}33`,
-          }}
-        >
-          {selectedBelt.material}
-        </span>
-      </div>
-
-      {/* ── Center: Belt selector dropdown ──────────────────────────────── */}
-      <div className="flex-1 flex justify-center">
-        <BeltSelector />
-      </div>
-
-      {/* ── Right: indicators ───────────────────────────────────────────── */}
-      <div className="flex items-center gap-1 flex-shrink-0">
-        {/* Connection */}
-        <div className="flex items-center gap-1 text-xs px-2">
-          {isOnline ? (
-            <>
-              <Wifi size={13} className="text-green-500" />
-              <span className="text-green-600 dark:text-green-400 hidden sm:inline">Live</span>
-            </>
-          ) : (
-            <>
-              <WifiOff size={13} className="text-red-500" />
-              <span className="text-red-500 hidden sm:inline">Offline</span>
-            </>
-          )}
         </div>
 
+        {/* Belt selector dropdown */}
+        <div className="flex-shrink-0">
+          <BeltSelector />
+        </div>
+      </div>
+
+      {/* ── CENTER: Health + status ──────────────────────────────────────── */}
+      <div className="flex items-center gap-2 flex-1 justify-center px-2">
+        {summary && (
+          <div
+            className="flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-semibold"
+            style={{ background: healthColor + '18', color: healthColor, border: `1px solid ${healthColor}33` }}
+          >
+            <span
+              className="w-1.5 h-1.5 rounded-full animate-pulse"
+              style={{ backgroundColor: healthColor }}
+            />
+            Health {summary.beltHealth}%
+          </div>
+        )}
+        <div className="flex items-center gap-1 text-xs">
+          {isOnline ? (
+            <>
+              <Wifi size={12} className="text-green-500" />
+              <span className="text-green-600 dark:text-green-400 hidden md:inline text-[11px]">Live</span>
+            </>
+          ) : (
+            <WifiOff size={12} className="text-red-500" />
+          )}
+        </div>
+      </div>
+
+      {/* ── RIGHT: Actions ───────────────────────────────────────────────── */}
+      <div className="flex items-center gap-1 px-3 flex-shrink-0">
         {/* Alert bell */}
         <button
           onClick={() => navigate('/alerts')}
@@ -92,8 +112,8 @@ export default function Topbar() {
         </button>
 
         {/* Clock */}
-        <span className="text-muted text-xs font-mono pl-1 hidden sm:block">
-          {new Date().toLocaleTimeString()}
+        <span className="text-muted text-xs font-mono pl-1 hidden sm:block tabular-nums">
+          {time}
         </span>
       </div>
     </header>
