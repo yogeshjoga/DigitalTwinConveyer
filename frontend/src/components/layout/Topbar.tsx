@@ -1,4 +1,4 @@
-import { Bell, Wifi, WifiOff, Sun, Moon } from 'lucide-react';
+import { Bell, Wifi, WifiOff, Sun, Moon, ChevronDown } from 'lucide-react';
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useDashboardSummary, useAlerts } from '@/api/hooks';
@@ -16,7 +16,6 @@ export default function Topbar() {
   const unread   = alerts?.filter((a) => !a.acknowledged).length ?? 0;
   const isOnline = true;
 
-  // Live clock
   const [time, setTime] = useState(() => new Date().toLocaleTimeString());
   useEffect(() => {
     const id = setInterval(() => setTime(new Date().toLocaleTimeString()), 1000);
@@ -29,67 +28,75 @@ export default function Topbar() {
 
   return (
     <header
-      className="h-14 flex items-center flex-shrink-0 border-b transition-colors"
+      className="h-14 flex items-center flex-shrink-0 border-b"
       style={{ backgroundColor: 'var(--color-panel)', borderColor: 'var(--color-border)' }}
     >
-      {/* ── LEFT: Belt name + selector ──────────────────────────────────── */}
-      <div className="flex items-center gap-3 px-4 flex-shrink-0 min-w-0" style={{ flex: '0 0 auto', maxWidth: '55%' }}>
-        {/* Belt name headline */}
-        <div className="flex flex-col min-w-0">
-          <div className="flex items-center gap-2 min-w-0">
-            <span
-              className="w-2 h-2 rounded-full flex-shrink-0"
-              style={{ backgroundColor: selectedBelt.color }}
-            />
-            <span className="text-sm font-bold text-primary truncate leading-tight">
-              {selectedBelt.name}
-            </span>
-            <span
-              className="text-[10px] font-mono px-1.5 py-0.5 rounded font-semibold flex-shrink-0 hidden sm:inline"
-              style={{ background: selectedBelt.color + '18', color: selectedBelt.color }}
-            >
-              {selectedBelt.id}
-            </span>
-          </div>
-          <span className="text-[10px] text-muted leading-tight truncate hidden sm:block">
-            {selectedBelt.material} · {selectedBelt.area}
-          </span>
-        </div>
-
-        {/* Belt selector dropdown */}
-        <div className="flex-shrink-0">
-          <BeltSelector />
-        </div>
+      {/* ── LEFT: Belt selector dropdown only ───────────────────────────── */}
+      <div className="flex items-center px-4 flex-shrink-0" style={{ width: 220 }}>
+        <BeltSelector />
       </div>
 
-      {/* ── CENTER: Health + status ──────────────────────────────────────── */}
-      <div className="flex items-center gap-2 flex-1 justify-center px-2">
+      {/* ── CENTER: Current belt name — big, clean, prominent ───────────── */}
+      <div className="flex-1 flex flex-col items-center justify-center min-w-0 px-4">
+        <div className="flex items-center gap-2.5">
+          <span
+            className="w-2.5 h-2.5 rounded-full flex-shrink-0"
+            style={{ backgroundColor: selectedBelt.color }}
+          />
+          <span className="text-base font-bold text-primary leading-tight truncate">
+            {selectedBelt.name}
+          </span>
+          <span
+            className="text-[11px] font-mono font-semibold px-2 py-0.5 rounded-md flex-shrink-0 hidden sm:inline"
+            style={{
+              background: selectedBelt.color + '18',
+              color: selectedBelt.color,
+              border: `1px solid ${selectedBelt.color}33`,
+            }}
+          >
+            {selectedBelt.id}
+          </span>
+        </div>
+        <span className="text-[11px] text-muted leading-tight hidden sm:block">
+          {selectedBelt.material} · {selectedBelt.area}
+        </span>
+      </div>
+
+      {/* ── RIGHT: Health · Live · Bell · Theme · Clock ──────────────────── */}
+      <div className="flex items-center gap-2 px-4 flex-shrink-0">
+        {/* Health badge */}
         {summary && (
           <div
             className="flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-semibold"
-            style={{ background: healthColor + '18', color: healthColor, border: `1px solid ${healthColor}33` }}
+            style={{
+              background: healthColor + '18',
+              color: healthColor,
+              border: `1px solid ${healthColor}33`,
+            }}
           >
-            <span
-              className="w-1.5 h-1.5 rounded-full animate-pulse"
-              style={{ backgroundColor: healthColor }}
-            />
+            <span className="w-1.5 h-1.5 rounded-full animate-pulse" style={{ backgroundColor: healthColor }} />
             Health {summary.beltHealth}%
           </div>
         )}
-        <div className="flex items-center gap-1 text-xs">
+
+        {/* Live indicator */}
+        <div className="flex items-center gap-1 text-xs font-medium hidden sm:flex">
           {isOnline ? (
             <>
-              <Wifi size={12} className="text-green-500" />
-              <span className="text-green-600 dark:text-green-400 hidden md:inline text-[11px]">Live</span>
+              <Wifi size={13} className="text-green-500" />
+              <span className="text-green-600 dark:text-green-400">Live</span>
             </>
           ) : (
-            <WifiOff size={12} className="text-red-500" />
+            <>
+              <WifiOff size={13} className="text-red-500" />
+              <span className="text-red-500">Offline</span>
+            </>
           )}
         </div>
-      </div>
 
-      {/* ── RIGHT: Actions ───────────────────────────────────────────────── */}
-      <div className="flex items-center gap-1 px-3 flex-shrink-0">
+        {/* Divider */}
+        <div className="w-px h-5 hidden sm:block" style={{ backgroundColor: 'var(--color-border)' }} />
+
         {/* Alert bell */}
         <button
           onClick={() => navigate('/alerts')}
@@ -112,7 +119,7 @@ export default function Topbar() {
         </button>
 
         {/* Clock */}
-        <span className="text-muted text-xs font-mono pl-1 hidden sm:block tabular-nums">
+        <span className="text-muted text-xs font-mono tabular-nums hidden md:block">
           {time}
         </span>
       </div>

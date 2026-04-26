@@ -1,4 +1,5 @@
 import { NavLink } from 'react-router-dom';
+import dtcLogo from '@/assets/DTC_LOGO.png';
 import {
   LayoutDashboard,
   Box,
@@ -13,6 +14,8 @@ import {
   Gauge,
   ClipboardList,
   Film,
+  HelpCircle,
+  Info,
 } from 'lucide-react';
 import { useBeltStore } from '@/store/useBeltStore';
 import { useAlerts } from '@/api/hooks';
@@ -29,6 +32,11 @@ const NAV_ITEMS = [
   { to: '/alerts',          icon: Bell,            label: 'Alerts' },
   { to: '/work-orders',     icon: ClipboardList,   label: 'Work Orders' },
   { to: '/config',          icon: Settings,        label: 'Belt Config' },
+];
+
+const BOTTOM_NAV = [
+  { to: '/help',  icon: HelpCircle, label: 'Help' },
+  { to: '/about', icon: Info,       label: 'About' },
 ];
 
 export default function Sidebar() {
@@ -50,16 +58,19 @@ export default function Sidebar() {
     >
       {/* Logo */}
       <div
-        className="flex items-center gap-3 px-4 py-5 border-b"
+        className="flex items-center gap-3 px-4 py-4 border-b"
         style={{ borderColor: 'var(--color-border)' }}
       >
-        <div className="w-8 h-8 rounded-lg bg-brand-500 flex items-center justify-center flex-shrink-0">
-          <span className="text-white font-bold text-sm">DT</span>
-        </div>
+        <img
+          src={dtcLogo}
+          alt="DTC Logo"
+          className="w-8 h-8 rounded-lg object-contain flex-shrink-0"
+          style={{ background: 'var(--color-surface)' }}
+        />
         {sidebarOpen && (
-          <div>
-            <p className="font-semibold text-sm leading-tight text-primary">DigitalTwin</p>
-            <p className="text-xs text-muted">Conveyer Belt</p>
+          <div className="min-w-0">
+            <p className="font-bold text-sm leading-tight text-primary truncate">DigitalTwin</p>
+            <p className="text-[10px] text-muted leading-tight">Conveyer Belt</p>
           </div>
         )}
       </div>
@@ -88,6 +99,26 @@ export default function Sidebar() {
           </NavLink>
         ))}
       </nav>
+
+      {/* Bottom nav: Help + About */}
+      <div className="border-t py-2" style={{ borderColor: 'var(--color-border)' }}>
+        {BOTTOM_NAV.map(({ to, icon: Icon, label }) => (
+          <NavLink
+            key={to}
+            to={to}
+            className={({ isActive }) =>
+              `flex items-center gap-3 px-4 py-2 mx-2 rounded-lg text-sm transition-colors ${
+                isActive
+                  ? 'bg-brand-500/20 text-brand-500 font-medium'
+                  : 'text-secondary hover:text-primary hover:bg-black/5 dark:hover:bg-white/5'
+              }`
+            }
+          >
+            <Icon size={16} className="flex-shrink-0" />
+            {sidebarOpen && <span>{label}</span>}
+          </NavLink>
+        ))}
+      </div>
 
       {/* Collapse toggle */}
       <button

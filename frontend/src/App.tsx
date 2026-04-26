@@ -11,6 +11,8 @@ import AlertsPage from '@/pages/AlertsPage';
 import DigitalTwinPage from '@/pages/DigitalTwinPage';
 import WorkOrderPage from '@/pages/WorkOrderPage';
 import VideoAnalyticsPage from '@/pages/VideoAnalyticsPage';
+import AboutPage from '@/pages/AboutPage';
+import HelpPage from '@/pages/HelpPage';
 
 export default function App() {
   return (
@@ -28,6 +30,8 @@ export default function App() {
         <Route path="alerts"          element={<AlertsPage />} />
         <Route path="work-orders"     element={<WorkOrderPage />} />
         <Route path="config"          element={<BeltConfigPage />} />
+        <Route path="about"           element={<AboutPage />} />
+        <Route path="help"            element={<HelpPage />} />
       </Route>
     </Routes>
   );
