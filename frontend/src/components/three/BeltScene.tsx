@@ -52,10 +52,19 @@ function SceneContent({
   showMaterial,
   cameraPreset,
   materialLoad,
-}: Required<BeltSceneProps>) {
-  const { camera } = useThree();
+  isDark,
+  gridCell,
+  gridSect,
+  bgColor,
+}: Required<BeltSceneProps> & { isDark: boolean; gridCell: string; gridSect: string; bgColor: string }) {
+  const { camera, gl } = useThree();
   const controlsRef = useRef<any>(null);
   const selectedBelt = useBeltStore((s) => s.selectedBeltEntry);
+
+  // Keep WebGL clear color in sync with theme changes
+  useEffect(() => {
+    gl.setClearColor(bgColor, 1);
+  }, [bgColor, gl]);
 
   // Animate camera to preset when it changes
   useEffect(() => {
@@ -97,17 +106,17 @@ function SceneContent({
   return (
     <>
       {/* Lighting */}
-      <ambientLight intensity={0.3} />
-      <directionalLight position={[10, 20, 10]} intensity={1.2} castShadow shadow-mapSize={[2048, 2048]} />
-      <pointLight position={[-10, 5, -10]} intensity={0.5} color="#3b82f6" />
+      <ambientLight intensity={isDark ? 0.3 : 0.7} />
+      <directionalLight position={[10, 20, 10]} intensity={isDark ? 1.2 : 1.6} castShadow shadow-mapSize={[2048, 2048]} />
+      <pointLight position={[-10, 5, -10]} intensity={isDark ? 0.5 : 0.2} color={isDark ? '#3b82f6' : '#60a5fa'} />
 
       <Environment preset="warehouse" />
 
       <Grid
         args={[50, 50]}
         position={[0, -0.6, 0]}
-        cellColor="#1e293b"
-        sectionColor="#334155"
+        cellColor={gridCell}
+        sectionColor={gridSect}
         fadeDistance={40}
       />
 
@@ -131,7 +140,7 @@ function SceneContent({
         />
       )}
 
-      <Text position={[0, 2.5, -beltLength / 2 - 1]} fontSize={0.4} color="#94a3b8" anchorX="center">
+      <Text position={[0, 2.5, -beltLength / 2 - 1]} fontSize={0.4} color={isDark ? '#94a3b8' : '#475569'} anchorX="center">
         {selectedBelt.name}  ·  {selectedBelt.id}
       </Text>
 
@@ -161,16 +170,26 @@ export default function BeltScene({
   materialLoad = 30,
 }: BeltSceneProps) {
   const preset = CAMERA_PRESETS[cameraPreset];
+  const theme  = useBeltStore((s) => s.theme);
+  const isDark = theme === 'dark';
+
+  // Background colours per theme
+  const bgColor   = isDark ? '#0d1117' : '#f1f5f9';
+  const gridCell  = isDark ? '#1e293b' : '#cbd5e1';
+  const gridSect  = isDark ? '#334155' : '#94a3b8';
 
   return (
-    <div className="w-full h-full rounded-xl overflow-hidden bg-[#0a0f1a]">
+    <div
+      className="w-full h-full rounded-xl overflow-hidden"
+      style={{ backgroundColor: bgColor }}
+    >
       <Canvas
         camera={{ position: preset.pos, fov: 50 }}
         shadows
         gl={{ antialias: true, alpha: false }}
         className="three-canvas"
       >
-        <Suspense fallback={<Html center><span className="text-white text-sm">Loading 3D scene…</span></Html>}>
+        <Suspense fallback={<Html center><span className="text-sm" style={{ color: isDark ? 'white' : '#334155' }}>Loading 3D scene…</span></Html>}>
           <SceneContent
             beltLength={beltLength}
             beltWidth={beltWidth}
@@ -182,6 +201,10 @@ export default function BeltScene({
             showMaterial={showMaterial}
             cameraPreset={cameraPreset}
             materialLoad={materialLoad}
+            isDark={isDark}
+            gridCell={gridCell}
+            gridSect={gridSect}
+            bgColor={bgColor}
           />
         </Suspense>
       </Canvas>
