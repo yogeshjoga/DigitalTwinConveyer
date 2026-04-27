@@ -20,6 +20,22 @@ BeltGuard AI is a full-stack **Industrial IoT Digital Twin** platform for convey
 
 ---
 
+## Visual Overview
+
+### 🖥️ Main Dashboard
+Real-time KPI monitoring and health analytics.
+![Dashboard](docs/screenshots/dashboard.png)
+
+### 🧊 3D Digital Twin
+Interactive Three.js visualization of the conveyor belt.
+![Digital Twin](docs/screenshots/digital-twin.png)
+
+### 👁️ Computer Vision
+AI-powered defect detection and live camera feeds.
+![Vision](docs/screenshots/vision.png)
+
+---
+
 ## Project Structure
 
 ```
@@ -183,6 +199,8 @@ Main overview page with live data:
 
 All data auto-refreshes every 2–3 seconds.
 
+![Dashboard Detail](docs/screenshots/dashboard.png)
+
 ---
 
 ### Digital Twin (`/digital-twin`)
@@ -194,6 +212,8 @@ Interactive 3D visualization using Three.js / React Three Fiber:
 - **Defect markers** — 3D markers at detected defect positions
 - **Orbit controls** — drag to rotate, scroll to zoom
 - **Belt animation** — surface moves at the current live belt speed
+
+![Digital Twin Detail](docs/screenshots/digital-twin.png)
 
 ---
 
@@ -275,6 +295,8 @@ All active cameras show CCTV overlays: scanlines, vignette, blinking REC dot, li
 
 **Click "Full Screen"** on any video camera → fullscreen popup with the video looping, full CCTV overlays, press Escape to close.
 
+![Vision Detail](docs/screenshots/vision.png)
+
 ---
 
 ### ML Prediction (`/prediction`)
@@ -288,6 +310,8 @@ Core predictive intelligence:
 - **Detailed Risk Breakdown** — horizontal bars with time-to-event labels
 - **Summary Cards** — Maintenance Window, Remaining Life, Overall Risk Level
 - **Smart Insights** — auto-generated maintenance recommendations
+
+![ML Prediction Detail](docs/screenshots/ml-prediction.png)
 
 ---
 
@@ -347,6 +371,8 @@ Tagged items appear as colored chips and auto-append reference lines to the task
 - Online / offline availability dot
 
 After sending, a collapsible log shows all dispatched tickets with refs, priority, and timestamp.
+
+![Work Orders Detail](docs/screenshots/work-orders.png)
 
 ---
 
