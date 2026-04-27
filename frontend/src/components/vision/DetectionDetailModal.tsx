@@ -172,6 +172,8 @@ export default function DetectionDetailModal({ detection, imgSrc, onClose }: Pro
   const color = knowledge.color;
   const Icon = knowledge.icon;
   const selectedBelt = useBeltStore((s) => s.selectedBeltEntry);
+  const sidebarOpen  = useBeltStore((s) => s.sidebarOpen);
+  const sidebarW     = sidebarOpen ? 256 : 64; // matches w-64 / w-16
 
   const BELT_LEN = 100, BELT_W = 1.2;
   const fromLeft  = d.position.x * BELT_LEN;
@@ -231,14 +233,32 @@ export default function DetectionDetailModal({ detection, imgSrc, onClose }: Pro
 
   return (
     <>
+      {/* Backdrop — only covers the content area (right of sidebar, below topbar) */}
       <motion.div initial={{ opacity:0 }} animate={{ opacity:1 }} exit={{ opacity:0 }}
-        className="fixed inset-0 z-50" style={{ background:"rgba(0,0,0,0.6)", backdropFilter:"blur(4px)" }}
+        className="fixed z-40"
+        style={{
+          top: 56,           // topbar h-14 = 56px
+          left: sidebarW,
+          right: 0,
+          bottom: 0,
+          background: "rgba(0,0,0,0.45)",
+          backdropFilter: "blur(3px)",
+        }}
         onClick={onClose}/>
 
+      {/* Drawer — slides in from right, below topbar, right of sidebar */}
       <motion.div initial={{ x:"100%" }} animate={{ x:0 }} exit={{ x:"100%" }}
         transition={{ type:"spring", stiffness:320, damping:32 }}
-        className="fixed right-0 top-0 h-full z-50 flex flex-col overflow-hidden"
-        style={{ width:"min(680px,100vw)", backgroundColor:"var(--color-panel)", borderLeft:"1px solid var(--color-border)", boxShadow:"-8px 0 40px rgba(0,0,0,0.25)" }}>
+        className="fixed z-50 flex flex-col overflow-hidden"
+        style={{
+          top: 56,
+          right: 0,
+          bottom: 0,
+          width: "min(680px, calc(100vw - " + sidebarW + "px))",
+          backgroundColor:"var(--color-panel)",
+          borderLeft:"1px solid var(--color-border)",
+          boxShadow:"-8px 0 40px rgba(0,0,0,0.2)",
+        }}>
 
         {/* ── Header ── */}
         <div className="flex items-center gap-3 px-5 py-4 border-b flex-shrink-0"

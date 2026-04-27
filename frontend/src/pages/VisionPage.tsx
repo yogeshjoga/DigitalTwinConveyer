@@ -5,7 +5,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import type { DefectType, VisionDetection } from '@/types';
 import {
   Scissors, Circle, AlignLeft, Layers,
-  LayoutGrid, Camera, CheckCircle2, ZoomIn, X,
+  LayoutGrid, CheckCircle2, ZoomIn, X,
   VolumeX, Wifi,
 } from 'lucide-react';
 import DetectionDetailModal from '@/components/vision/DetectionDetailModal';
@@ -639,26 +639,6 @@ export default function VisionPage() {
             </div>
           )}
         </AnimatePresence>
-      </div>
-
-      {/* ── Camera feed views ──────────────────────────────────────────────── */}
-      <div className="card">
-        <div className="flex items-center gap-2 mb-4">
-          <Camera size={16} className="text-secondary" />
-          <h2 className="text-sm font-semibold text-secondary">Live Camera Views</h2>
-          <span className="text-xs text-muted ml-auto">Click a view to activate feed</span>
-        </div>
-
-        <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
-          {CAMERA_VIEWS.map((view) => (
-            <CameraViewPanel
-              key={view.label}
-              {...view}
-              onZoom={setLightbox}
-              onVideoExpand={(v) => setVideoLightbox(v)}
-            />
-          ))}
-        </div>
       </div>
 
       {/* ── Lightbox ───────────────────────────────────────────────────────── */}
