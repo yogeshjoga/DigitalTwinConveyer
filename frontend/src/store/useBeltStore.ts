@@ -5,44 +5,107 @@ import { BELT_CATALOG } from '@/data/beltCatalog';
 
 type Theme = 'dark' | 'light';
 
+export type AccentColor = 'green' | 'blue' | 'purple' | 'orange' | 'red' | 'cyan';
+export type FontSize    = 'compact' | 'default' | 'large';
+export type BorderRadius = 'sharp' | 'default' | 'rounded';
+
+export interface UISettings {
+  zoom:         number;       // 60–130, applied as CSS zoom on #root
+  fontSize:     FontSize;
+  accentColor:  AccentColor;
+  borderRadius: BorderRadius;
+  compactMode:  boolean;      // tighter padding everywhere
+  sidebarLabels: boolean;     // show/hide text labels in sidebar (independent of collapse)
+}
+
+const ACCENT_COLORS: Record<AccentColor, string> = {
+  green:  '#27a372',
+  blue:   '#3b82f6',
+  purple: '#8b5cf6',
+  orange: '#f97316',
+  red:    '#ef4444',
+  cyan:   '#06b6d4',
+};
+
+const FONT_SIZE_MAP: Record<FontSize, string> = {
+  compact: '13px',
+  default: '14px',
+  large:   '16px',
+};
+
+const BORDER_RADIUS_MAP: Record<BorderRadius, string> = {
+  sharp:   '4px',
+  default: '12px',
+  rounded: '20px',
+};
+
+function getInitialUISettings(): UISettings {
+  try {
+    const raw = localStorage.getItem('beltguard-ui-settings');
+    if (raw) return { ...DEFAULT_UI_SETTINGS, ...JSON.parse(raw) };
+  } catch {}
+  return DEFAULT_UI_SETTINGS;
+}
+
+const DEFAULT_UI_SETTINGS: UISettings = {
+  zoom:         90,
+  fontSize:     'default',
+  accentColor:  'green',
+  borderRadius: 'default',
+  compactMode:  false,
+  sidebarLabels: true,
+};
+
+function applyUISettings(s: UISettings) {
+  const root = document.documentElement;
+  // Zoom — applied to the root element
+  (document.getElementById('root') as HTMLElement | null)?.style.setProperty('zoom', `${s.zoom}%`);
+  // Font size
+  root.style.setProperty('--font-size-base', FONT_SIZE_MAP[s.fontSize]);
+  // Accent color
+  const accent = ACCENT_COLORS[s.accentColor];
+  root.style.setProperty('--color-accent', accent);
+  root.style.setProperty('--color-brand', accent);
+  // Border radius
+  root.style.setProperty('--radius-card', BORDER_RADIUS_MAP[s.borderRadius]);
+  // Compact mode
+  root.style.setProperty('--spacing-card', s.compactMode ? '0.5rem' : '1rem');
+  try { localStorage.setItem('beltguard-ui-settings', JSON.stringify(s)); } catch {}
+}
+
 interface BeltStore {
-  // Active belt config (from backend CRUD)
   activeBelt: BeltConfig | null;
   setActiveBelt: (belt: BeltConfig) => void;
 
-  // Selected belt from the steel-industry catalog
   selectedBeltEntry: BeltEntry;
   setSelectedBeltEntry: (entry: BeltEntry) => void;
 
-  // Live sensor data (ring buffer, last 60 readings)
   sensorHistory: SensorReading[];
   pushSensorReading: (r: SensorReading) => void;
 
-  // Latest ML prediction
   latestPrediction: MLPrediction | null;
   setLatestPrediction: (p: MLPrediction) => void;
 
-  // Alerts
   alerts: Alert[];
   addAlert: (a: Alert) => void;
   acknowledgeAlert: (id: string) => void;
   clearAcknowledged: () => void;
 
-  // UI state
   sidebarOpen: boolean;
   toggleSidebar: () => void;
 
-  // Theme
   theme: Theme;
   toggleTheme: () => void;
   setTheme: (t: Theme) => void;
 
-  // ── PLC belt running state ────────────────────────────────────────────────
-  // Single source of truth consumed by Digital Twin 3D scene, material flow,
-  // belt texture animation, and any stop-button across the app.
   plcBeltRunning: boolean;
-  plcStopReason: string | null;   // human-readable reason shown in UI
+  plcStopReason: string | null;
   setPLCRunning: (running: boolean, reason?: string) => void;
+
+  // ── UI Settings ───────────────────────────────────────────────────────────
+  uiSettings: UISettings;
+  setUISettings: (patch: Partial<UISettings>) => void;
+  resetUISettings: () => void;
 }
 
 function getInitialTheme(): Theme {
@@ -68,10 +131,12 @@ function getInitialBeltEntry(): BeltEntry {
       if (found) return found;
     }
   } catch {}
-  return BELT_CATALOG[0]; // default: Iron Ore Belt 1
+  return BELT_CATALOG[0];
 }
 
+// Apply on load
 applyTheme(getInitialTheme());
+applyUISettings(getInitialUISettings());
 
 export const useBeltStore = create<BeltStore>((set) => ({
   activeBelt: null,
@@ -85,9 +150,7 @@ export const useBeltStore = create<BeltStore>((set) => ({
 
   sensorHistory: [],
   pushSensorReading: (r) =>
-    set((state) => ({
-      sensorHistory: [...state.sensorHistory.slice(-59), r],
-    })),
+    set((state) => ({ sensorHistory: [...state.sensorHistory.slice(-59), r] })),
 
   latestPrediction: null,
   setLatestPrediction: (p) => set({ latestPrediction: p }),
@@ -97,14 +160,10 @@ export const useBeltStore = create<BeltStore>((set) => ({
     set((state) => ({ alerts: [a, ...state.alerts].slice(0, 200) })),
   acknowledgeAlert: (id) =>
     set((state) => ({
-      alerts: state.alerts.map((a) =>
-        a.id === id ? { ...a, acknowledged: true } : a
-      ),
+      alerts: state.alerts.map((a) => a.id === id ? { ...a, acknowledged: true } : a),
     })),
   clearAcknowledged: () =>
-    set((state) => ({
-      alerts: state.alerts.filter((a) => !a.acknowledged),
-    })),
+    set((state) => ({ alerts: state.alerts.filter((a) => !a.acknowledged) })),
 
   sidebarOpen: true,
   toggleSidebar: () => set((s) => ({ sidebarOpen: !s.sidebarOpen })),
@@ -117,14 +176,25 @@ export const useBeltStore = create<BeltStore>((set) => ({
       return { theme: next };
     }),
   setTheme: (t) =>
-    set(() => {
-      applyTheme(t);
-      return { theme: t };
-    }),
+    set(() => { applyTheme(t); return { theme: t }; }),
 
-  // Belt starts running — PLC default state is running
   plcBeltRunning: true,
   plcStopReason: null,
   setPLCRunning: (running, reason) =>
     set({ plcBeltRunning: running, plcStopReason: running ? null : (reason ?? 'Manual stop') }),
+
+  uiSettings: getInitialUISettings(),
+  setUISettings: (patch) =>
+    set((s) => {
+      const next = { ...s.uiSettings, ...patch };
+      applyUISettings(next);
+      return { uiSettings: next };
+    }),
+  resetUISettings: () =>
+    set(() => {
+      applyUISettings(DEFAULT_UI_SETTINGS);
+      return { uiSettings: DEFAULT_UI_SETTINGS };
+    }),
 }));
+
+export { ACCENT_COLORS, DEFAULT_UI_SETTINGS };

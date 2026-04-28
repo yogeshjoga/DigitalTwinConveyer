@@ -13,6 +13,7 @@ import DigitalTwinPage from '@/pages/DigitalTwinPage';
 import WorkOrderPage from '@/pages/WorkOrderPage';
 import VideoAnalyticsPage from '@/pages/VideoAnalyticsPage';
 import PLCPage from '@/pages/PLCPage';
+import SettingsPage from '@/pages/SettingsPage';
 import AboutPage from '@/pages/AboutPage';
 import HelpPage from '@/pages/HelpPage';
 
@@ -33,6 +34,7 @@ export default function App() {
         <Route path="work-orders"     element={<WorkOrderPage />} />
         <Route path="plc"             element={<PLCPage />} />
         <Route path="config"          element={<BeltConfigPage />} />
+        <Route path="settings"        element={<SettingsPage />} />
         <Route path="about"           element={<AboutPage />} />
         <Route path="help"            element={<HelpPage />} />
       </Route>

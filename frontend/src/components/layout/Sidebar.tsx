@@ -4,6 +4,7 @@ import {
   LayoutDashboard, Box, Activity, Thermometer, Eye,
   Brain, Bell, Settings, ChevronLeft, ChevronRight,
   Gauge, ClipboardList, Film, HelpCircle, Info, Cpu, Home,
+  SlidersHorizontal,
 } from 'lucide-react';
 import { useBeltStore } from '@/store/useBeltStore';
 import { useAlerts } from '@/api/hooks';
@@ -50,8 +51,9 @@ const NAV_GROUPS = [
 ];
 
 const BOTTOM_NAV = [
-  { to: '/help',  icon: HelpCircle, label: 'Help' },
-  { to: '/about', icon: Info,       label: 'About' },
+  { to: '/settings', icon: SlidersHorizontal, label: 'Settings' },
+  { to: '/help',     icon: HelpCircle,        label: 'Help' },
+  { to: '/about',    icon: Info,              label: 'About' },
 ];
 
 export default function Sidebar() {

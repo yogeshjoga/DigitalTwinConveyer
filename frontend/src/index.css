@@ -40,6 +40,7 @@
   body {
     background-color: var(--color-surface);
     color: var(--text-primary);
+    font-size: var(--font-size-base, 14px);
     @apply font-sans antialiased;
     margin: 0;
     padding: 0;
@@ -63,7 +64,8 @@
   .card {
     background-color: var(--color-panel);
     border: 1px solid var(--color-border);
-    @apply rounded-xl p-4;
+    border-radius: var(--radius-card, 12px);
+    padding: var(--spacing-card, 1rem);
   }
 
   /* Text helpers */
