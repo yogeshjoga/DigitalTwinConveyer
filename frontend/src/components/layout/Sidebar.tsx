@@ -1,37 +1,37 @@
-import { NavLink } from 'react-router-dom';
+import { NavLink, Link } from 'react-router-dom';
 import dtcLogo from '@/assets/DTC_LOGO.png';
 import {
   LayoutDashboard, Box, Activity, Thermometer, Eye,
   Brain, Bell, Settings, ChevronLeft, ChevronRight,
-  Gauge, ClipboardList, Film, HelpCircle, Info, Cpu,
+  Gauge, ClipboardList, Film, HelpCircle, Info, Cpu, Home,
 } from 'lucide-react';
 import { useBeltStore } from '@/store/useBeltStore';
 import { useAlerts } from '@/api/hooks';
 
-// ── Grouped nav structure ─────────────────────────────────────────────────────
 const NAV_GROUPS = [
   {
     label: 'Overview',
     items: [
-      { to: '/dashboard',    icon: LayoutDashboard, label: 'Dashboard' },
+      { to: '/',             icon: Home,            label: 'Fleet Overview', exact: true },
+      { to: '/dashboard',    icon: LayoutDashboard, label: 'Belt Dashboard' },
       { to: '/digital-twin', icon: Box,             label: 'Digital Twin' },
     ],
   },
   {
     label: 'Monitoring',
     items: [
-      { to: '/sensors',         icon: Activity,   label: 'Sensors' },
-      { to: '/load',            icon: Gauge,      label: 'Load Analysis' },
-      { to: '/thermal',         icon: Thermometer,label: 'Thermal' },
-      { to: '/vision',          icon: Eye,        label: 'Vision' },
-      { to: '/video-analytics', icon: Film,       label: 'Video Analytics' },
+      { to: '/sensors',         icon: Activity,    label: 'Sensors' },
+      { to: '/load',            icon: Gauge,       label: 'Load Analysis' },
+      { to: '/thermal',         icon: Thermometer, label: 'Thermal' },
+      { to: '/vision',          icon: Eye,         label: 'Vision' },
+      { to: '/video-analytics', icon: Film,        label: 'Video Analytics' },
     ],
   },
   {
     label: 'Control',
     items: [
-      { to: '/plc',         icon: Cpu,         label: 'PLC / HMI' },
-      { to: '/work-orders', icon: ClipboardList,label: 'Work Orders' },
+      { to: '/plc',         icon: Cpu,          label: 'PLC / HMI' },
+      { to: '/work-orders', icon: ClipboardList, label: 'Work Orders' },
     ],
   },
   {
@@ -68,8 +68,13 @@ export default function Sidebar() {
       }`}
       style={{ backgroundColor: 'var(--color-panel)', borderColor: 'var(--color-border)' }}
     >
-      {/* Logo */}
-      <div className="flex items-center gap-3 px-4 py-4 border-b" style={{ borderColor: 'var(--color-border)' }}>
+      {/* Logo — clicking navigates to Fleet Overview (home) */}
+      <Link
+        to="/"
+        className="flex items-center gap-3 px-4 py-4 border-b transition-colors hover:bg-black/5 dark:hover:bg-white/5"
+        style={{ borderColor: 'var(--color-border)' }}
+        title="Fleet Overview — Home"
+      >
         <img src={dtcLogo} alt="DTC Logo"
           className="w-8 h-8 rounded-lg object-contain flex-shrink-0"
           style={{ background: 'var(--color-surface)' }} />
@@ -79,27 +84,26 @@ export default function Sidebar() {
             <p className="text-[10px] text-muted leading-tight">Conveyor Belt</p>
           </div>
         )}
-      </div>
+      </Link>
 
       {/* Nav groups */}
       <nav className="flex-1 py-3 overflow-y-auto space-y-0.5">
         {NAV_GROUPS.map((group) => (
           <div key={group.label}>
-            {/* Group label — only visible when sidebar is open */}
             {sidebarOpen && (
               <p className="px-4 pt-3 pb-1 text-[10px] font-semibold uppercase tracking-widest text-muted select-none">
                 {group.label}
               </p>
             )}
             {!sidebarOpen && (
-              /* Thin divider between groups when collapsed */
               <div className="mx-3 my-1.5 border-t" style={{ borderColor: 'var(--color-border)' }} />
             )}
 
-            {group.items.map(({ to, icon: Icon, label, badge }) => (
+            {group.items.map(({ to, icon: Icon, label, badge, exact }) => (
               <NavLink
                 key={to}
                 to={to}
+                end={exact}
                 title={!sidebarOpen ? label : undefined}
                 className={({ isActive }) =>
                   `flex items-center gap-3 px-4 py-2.5 mx-2 rounded-lg text-sm transition-colors relative ${

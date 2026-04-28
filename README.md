@@ -1,38 +1,69 @@
-# DigitalTwin Conveyer Belt
+# DigitalTwin Conveyor Belt
 
-> Real-time predictive monitoring, AI-powered defect detection, and maintenance management for industrial conveyor belt systems.
+> Real-time predictive monitoring, AI-powered defect detection, PLC/HMI control, and maintenance management for industrial conveyor belt systems.
 
 ![React](https://img.shields.io/badge/React-18-61DAFB?logo=react) ![TypeScript](https://img.shields.io/badge/TypeScript-5-3178C6?logo=typescript) ![Node.js](https://img.shields.io/badge/Node.js-Express-339933?logo=node.js) ![Python](https://img.shields.io/badge/Python-FastAPI-009688?logo=fastapi) ![Three.js](https://img.shields.io/badge/Three.js-3D-black?logo=three.js)
 
 ---
 
-## What is BeltGuard AI?
+## What is DigitalTwin Conveyor Belt?
 
-BeltGuard AI is a full-stack **Industrial IoT Digital Twin** platform for conveyor belt monitoring in steel plants, coal handling, and mining operations. It combines:
+A full-stack **Industrial IoT Digital Twin** platform for conveyor belt monitoring in steel plants, coal handling, and mining operations. It combines:
 
 - **Live sensor telemetry** — load, temperature, vibration, speed, UDL streamed every 2 seconds
 - **Physics-informed ML predictions** — remaining belt life, tear / burst / overheat / misalignment risk
 - **Computer vision defect detection** — AI-classified holes, tears, edge damage, layer peeling with real images
-- **3D Digital Twin** — interactive Three.js belt model with thermal overlays and defect markers
-- **AI Chat Assistant** — GPT-4o-mini (or rule-based fallback) answering maintenance questions in context
+- **3D Digital Twin** — interactive Three.js belt model with thermal overlays, defect markers, and PLC-linked animation
+- **PLC / HMI Control** — real belt start/stop/e-stop, speed control, safety interlocks, editable auto-response rules
+- **10-minute sustained-condition gate** — belt only auto-stops after a critical condition persists for 10 minutes
+- **Restart gate** — after auto-stop, belt can only restart after a work order ticket is resolved OR defects are cleared
+- **Unified notifications** — PLC events + system alerts in one bell, toast popups broadcast to all workers
+- **Fleet Overview** — all 44 belts on one page with defect counts, severity breakdown, and sparklines
 - **Work Order Management** — assign tasks to engineers via WhatsApp, Email, SMS, Jira, ServiceNow, IBM Maximo
-- **CCTV Camera Feeds** — live video with CCTV overlay, left/right crop views, fullscreen popup
+- **AI Chat Assistant** — GPT-4o-mini (or rule-based fallback) answering maintenance questions in context
+
+---
+
+## What's New in v2.0
+
+| Feature | Description |
+|---------|-------------|
+| **Fleet Overview** | New landing page — all 44 belts with defect counts, severity pills, 12h sparklines, one-click to belt dashboard |
+| **PLC / HMI** | Full control panel: start/stop/e-stop, speed slider, safety interlocks, motor status, command audit log |
+| **10-min Sustained Gate** | Critical auto-rules only fire after condition holds for 10 minutes — prevents transient spike stops |
+| **Vision 2-in-10-min Rule** | Belt stops only after 2+ high-severity vision detections within 10 minutes |
+| **Restart Gate** | After auto-stop, restart blocked until work order ticket resolved OR defects cleared |
+| **Editable Auto-Rules** | Change thresholds, cooldowns, and actions from the PLC page UI |
+| **Chart Freeze on Stop** | All scrollable charts freeze with STOPPED overlay when belt is halted |
+| **E-Stop from Vision** | E-Stop and Assign buttons on each detection card |
+| **Unified Bell** | Single notification center combining PLC events + system alerts, no duplicate toasts on refresh |
+| **Severity Distribution** | Vision defects: 70% low, 25% medium, 5% high — realistic for demo |
 
 ---
 
 ## Visual Overview
 
-### 🖥️ Main Dashboard
-Real-time KPI monitoring and health analytics.
+### 🏠 Fleet Overview
+All 44 belts at a glance with defect counts and sparklines.
+
+### 🖥️ Belt Dashboard
+Per-belt live KPIs and scrollable load trend chart.
 ![Dashboard](docs/screenshots/dashboard.png)
 
 ### 🧊 3D Digital Twin
-Interactive Three.js visualization of the conveyor belt.
+Interactive Three.js visualization — freezes when PLC stops the belt.
 ![Digital Twin](docs/screenshots/digital-twin.png)
 
+### 🔧 PLC / HMI Control
+Real belt control with auto-rules, interlocks, and restart gate.
+
 ### 👁️ Computer Vision
-AI-powered defect detection and live camera feeds.
+AI defect detection with E-Stop and Assign buttons per card.
 ![Vision](docs/screenshots/vision.png)
+
+### 🤖 ML Prediction
+Physics-informed risk forecasts and anomaly timeline.
+![ML Prediction](docs/screenshots/ml-prediction.png)
 
 ---
 
@@ -41,7 +72,18 @@ AI-powered defect detection and live camera feeds.
 ```
 DigitalTwin/
 ├── frontend/          # React 18 + Vite + TypeScript + Tailwind CSS
+│   └── src/
+│       ├── pages/     # All page components (Fleet Overview, Belt Dashboard, PLC, etc.)
+│       ├── components/# Reusable UI (ScrollableChart, PLCNotificationToast, etc.)
+│       ├── api/       # TanStack Query hooks (usePLCState, useSensorHistory, etc.)
+│       ├── lib/       # useTimeSeriesBuffer, chartConfig, exportReport
+│       └── store/     # Zustand store (plcBeltRunning, selectedBelt, theme)
 ├── backend/           # Node.js + Express + TypeScript (REST API + WebSocket)
+│   └── src/
+│       ├── routes/    # dashboard, belts, sensors, load, thermal, vision, alerts, plc
+│       ├── store/     # In-memory data store (sensor ring buffer, PLC state, auto-rules)
+│       ├── simulator.ts # Sensor data generator + PLC auto-rule engine
+│       └── types/     # Shared TypeScript types (PLCState, PLCAutoRule, PLCNotification, etc.)
 ├── ml-service/        # Python FastAPI (ML predictions + AI chat)
 └── docs/              # API and architecture documentation
 ```
@@ -52,47 +94,28 @@ DigitalTwin/
 
 ### Prerequisites
 
-| Tool | Version | Install |
-|------|---------|---------|
-| Node.js | 18+ | https://nodejs.org |
-| Python | 3.10+ | https://python.org |
-| npm | 9+ | bundled with Node |
-| pip | latest | bundled with Python |
-
----
+| Tool | Version |
+|------|---------|
+| Node.js | 18+ |
+| Python | 3.10+ |
+| npm | 9+ |
 
 ### Step 1 — Install dependencies
 
-**Backend**
 ```bash
-cd backend
-npm install
-npm run dev
+# Backend
+cd backend && npm install
+
+# Frontend
+cd frontend && npm install
+
+# ML Service
+cd ml-service && pip install -r requirements.txt
 ```
 
-**Frontend**
-```bash
-cd frontend
-npm install
-npm run dev
-```
-
-**ML Service**
-```bash
-cd ml-service
-pip install -r requirements.txt
-python main.py
-```
-
----
-
-### Step 2 — Configure environment variables
+### Step 2 — Configure environment
 
 **Backend** (`backend/.env`):
-```bash
-cd backend
-cp .env.example .env
-```
 ```env
 PORT=8000
 NODE_ENV=development
@@ -101,301 +124,183 @@ CORS_ORIGIN=*
 ```
 
 **ML Service** (`ml-service/.env`):
-```bash
-cd ml-service
-cp .env.example .env
-```
 ```env
 ML_PORT=8001
 BACKEND_URL=http://localhost:8000
-# Optional — enables GPT-4o-mini AI chat. Without it, rule-based engine is used.
-OPENAI_API_KEY=sk-...
+OPENAI_API_KEY=sk-...   # Optional — enables GPT-4o-mini AI chat
 ```
 
-> The app works fully without an OpenAI key. The AI chat falls back to a built-in rule-based engine that answers all standard belt health questions.
+### Step 3 — Start all services
+
+```bash
+# Terminal 1 — Backend
+cd backend && npm run dev
+
+# Terminal 2 — ML Service
+cd ml-service && python main.py
+
+# Terminal 3 — Frontend
+cd frontend && npm run dev
+```
+
+Open **http://localhost:3000**
 
 ---
 
-### Step 3 — Start all three services
+## Feature Guide
 
-Open **three separate terminals**:
+### Fleet Overview (`/`)
 
-**Terminal 1 — Backend API**
-```bash
-cd backend
-npm run dev
-# Listening on http://localhost:8000
-```
+The landing page. Click the DigitalTwin logo in the sidebar to return here from any page.
 
-**Terminal 2 — ML Service**
-```bash
-cd ml-service
-python main.py
-# Listening on http://localhost:8001
-```
-
-**Terminal 3 — Frontend**
-```bash
-cd frontend
-npm run dev
-# Listening on http://localhost:3000
-```
-
-Open **http://localhost:3000** in your browser.
+- **6 KPI cards** — Total Belts, Active Defects, Critical/Medium/Low counts, System Alerts
+- **Defect category breakdown** — Tear, Hole, Edge Damage, Layer Peeling with severity splits and fill bars
+- **Live sensor snapshot** — 6 sensor readings with color-coded thresholds
+- **Belt grid by area** — all 44 belts grouped by plant area with 12-hour sparklines
+- **Click any belt card** → selects that belt and navigates to Belt Dashboard
 
 ---
 
-### Step 4 — Production build
+### Belt Dashboard (`/dashboard`)
 
-```bash
-# Backend
-cd backend
-npm run build
-npm start
+Per-belt deep stats for the selected belt.
 
-# Frontend
-cd frontend
-npm run build
-# Serve the dist/ folder with nginx, Vercel, or any static host
-
-# ML Service
-cd ml-service
-uvicorn main:app --host 0.0.0.0 --port 8001
-```
-
----
-
-## User Guide — Every Feature
-
-### Belt Selector (Top Bar)
-
-The top bar shows the currently monitored belt. Click the belt name to open the selector — choose from **45 real steel-plant conveyor belts** across 9 plant areas:
-
-| Area | Belts |
-|------|-------|
-| Raw Material Handling | Iron Ore Belt 1 & 2, Limestone, Dolomite, Fine Ore |
-| Coal & Coke Handling | Coal Belt 1 & 2, Coke Transfer, PCI Coal |
-| Sinter Plant | Sinter Feed, Return Fines, Hot Sinter, Cooling |
-| Blast Furnace Area | Burden Belt, Charging Belt, Stock House 1 & 2 |
-| Pellet Plant | Pellet Feed, Green Pellet, Fired Pellet, Transfer |
-| Slag Handling | Slag Belt 1 & 2, Hot Slag, Disposal |
-| Rolling Mill | Billet Transfer, Slab Transfer, Cooling Bed |
-| Yard & Dispatch | Yard Conveyor 1 & 2, Stacker, Reclaimer, Wagon Loading |
-| Special Purpose | Inclined, Decline, Cross Transfer, Emergency Bypass |
-
-Switching belts resets the AI chat context and updates all predictions.
-
----
-
-### Dashboard (`/dashboard`)
-
-Main overview page with live data:
-
-- **6 KPI cards** — Belt Health %, Speed (m/s), Current Load (kg/m), Temperature (°C), Remaining Life (hrs), Active Alerts
-- **Load Trend chart** — 30-minute UDL history with hover tooltips
-- **Health & Tear Risk gauges** — circular gauge charts with color thresholds
-- **Risk Analysis bars** — Tear, Burst, Overheat, Misalignment probability bars
-- **Recent Alerts** — last 5 unacknowledged alerts with severity badges
-
-All data auto-refreshes every 2–3 seconds.
-
-![Dashboard Detail](docs/screenshots/dashboard.png)
+- **6 KPI cards** — Belt Health %, Speed, Load, Temperature, Remaining Life, Active Alerts
+- **Scrollable Load Trend chart** — Grafana-style, scroll left for history, zoom ±
+- **Chart states**: LIVE (green pulse) when running, STOPPED (red overlay) when halted
+- **Health & Tear Risk gauges** — circular gauge charts
+- **Risk Analysis bars** — Tear, Burst, Overheat, Misalignment from ML model
+- **Clear Defects button** — resets vision detections AND unlocks the PLC restart gate
 
 ---
 
 ### Digital Twin (`/digital-twin`)
 
-Interactive 3D visualization using Three.js / React Three Fiber:
+3D belt visualization linked to PLC state.
 
-- **3D belt model** — animated conveyor belt with material flow particles
-- **Thermal overlay** — color-coded heat zones along the belt length
-- **Defect markers** — 3D markers at detected defect positions
-- **Orbit controls** — drag to rotate, scroll to zoom
-- **Belt animation** — surface moves at the current live belt speed
-
-![Digital Twin Detail](docs/screenshots/digital-twin.png)
+- **Belt animation** — surface scrolls at live belt speed; freezes when PLC stops the belt
+- **Material particles** — freeze in place when belt is stopped
+- **Belt Stopped banner** — red banner with "Assign Worker" and "Restart Belt" buttons
+- **E-STOP button** — overlaid on 3D canvas, two-step confirm
+- **Belt running indicator** — top center shows BELT RUNNING / BELT STOPPED
+- **5 camera presets** — Perspective, Front, Side, Top, Bottom
+- **Overlays** — Thermal zones, Defect markers, Material flow (toggleable)
 
 ---
 
-### Load Analysis (`/load`)
+### PLC / HMI (`/plc`)
 
-Detailed load and stress analysis:
+Real-time belt control panel.
 
-- **Point Load** (kN) and **UDL** (kg/m) live readings
-- **Peak Stress** (MPa) calculation
-- **Impact Velocity** and **Drop Height** from material feed
-- **Mass Flow Rate** (kg/s) and **Deposition Rate** (kg/m²/s)
-- Historical trend charts
+**Belt Control:**
+- START / STOP / EMERGENCY STOP (two-step confirm)
+- Reset Fault button when in fault/e-stop state
+- START is blocked when restart gate is active (shows "RESTART BLOCKED")
+
+**Restart Gate (shown when belt was auto-stopped):**
+- **Option 1** — Enter work order ticket reference → Confirm → gate cleared
+- **Option 2** — Clear all defects → gate cleared
+- Both options send a notification to all workers: "Restart Cleared"
+
+**Speed Control:**
+- Slider (0.5–6.0 m/s) + preset buttons (1.0, 1.5, 2.0, 2.5, 3.0, 4.0)
+- Only active when belt is running
+
+**Safety Interlocks:**
+- Emergency Pull Cord, Zero Speed Switch, Safety Gate, Overload Relay
+- Tripped interlocks with `preventStart: true` block the START button
+
+**Auto-Response Rules (editable):**
+
+| Rule | Condition | Action | Gate |
+|------|-----------|--------|------|
+| Sustained Overload | Load Cell > 480 kg for 10 min | E-Stop | Yes |
+| Critical Impact | Impact Force > 40 kN for 10 min | E-Stop | Yes |
+| Vision Critical | 2+ high detections in 10 min | E-Stop | Yes |
+| High Load | UDL > 420 kg/m | Reduce speed to 1.5 m/s | No |
+| High Temperature | Temp > 100°C for 10 min | Stop | Yes |
+| Vibration Spike | Vibration > 12 mm/s | Alert only | No |
+
+Click **Edit** on any rule to change threshold, cooldown, or reduce-speed target.
+
+**10-minute sustained-condition logic:**
+1. Condition first detected → warning notification: "Belt will stop in 10 min if unresolved"
+2. Every 2 minutes while active → monitoring reminder with countdown
+3. After 10 minutes → belt stops, restart gate activated
+
+**Command Audit Log** — every command with operator, timestamp, value, reason, accepted/rejected.
+
+---
+
+### Notifications (Bell Icon — top bar)
+
+Unified notification center combining PLC events and system alerts.
+
+- **Badge** — total unread count (PLC + system)
+- **Two tabs** — "PLC / Auto-Rules" and "System Alerts"
+- **Toast popups** — bottom-right, auto-dismiss after 8 seconds with progress bar
+- **No duplicate toasts on refresh** — seen IDs persisted to sessionStorage
+- **Mark all read** — clears the badge
+
+PLC notification types:
+- `⚠️ CONDITION DETECTED` — first time condition is met (warning)
+- `⏱️ MONITORING` — every 2 min while condition persists (warning)
+- `🚨 AUTO E-STOP` — belt stopped after 10 min (critical)
+- `✅ RESTART CLEARED` — gate cleared by ticket or defects (info)
+
+---
+
+### Computer Vision (`/vision`)
+
+AI defect detection with action buttons.
+
+- **E-STOP button** on high/medium severity cards — stops belt immediately, records reason
+- **Assign button** on all cards — navigates to Work Orders
+- **Exact Location** — distance from head, tail, left edge, right edge in metres
+- **Severity distribution** — 70% low, 25% medium, 5% high (realistic)
+- **Live Camera Views** — 4 feeds with CCTV overlays, fullscreen popup
+
+---
+
+### Video Analytics (`/video-analytics`)
+
+Natural language search across 48h of detection history.
+
+- Compact 5-per-row result cards with image, severity pills, defect tags, location line
+- Click any card → video player modal auto-seeks to that timestamp
+- Advanced Filters — date, hour range, defect type, severity, belt
 
 ---
 
 ### Sensors (`/sensors`)
 
-Live sensor dashboard for all 6 channels:
+Scrollable live charts for all 6 sensor channels.
 
-| Sensor | Unit | Warning | Critical |
-|--------|------|---------|---------|
-| Load Cell | kg | > 380 | > 480 |
-| Impact Force | kN | — | > 30 |
-| Belt Speed | m/s | — | > 5.5 |
-| Temperature | °C | > 60 | > 80 |
-| Vibration | mm/s | > 5 | > 10 |
-| UDL | kg/m | > 350 | > 450 |
-
-- Real-time line charts (last 30 minutes)
-- Color-coded status indicators
-- WebSocket for instant push updates
+- Charts freeze with STOPPED overlay when belt is halted
+- Polling stops when belt is stopped (no fake data generated)
+- Normalised overlay chart for cross-sensor comparison
+- Latest Reading table with warn/crit thresholds
 
 ---
 
-### Thermal (`/thermal`)
+### Load Analysis (`/load`)
 
-Thermal zone monitoring along the belt:
+Physics-based load modeling.
 
-- **Zone map** — temperature across all idler zones
-- **Hotspot detection** — zones exceeding thresholds highlighted
-- **Friction index** — per-zone coefficient (0–1)
-- **Status badges** — Normal / Warning / Critical per zone
-
----
-
-### Vision (`/vision`)
-
-AI-powered computer vision defect detection:
-
-**Category Summary Cards** — counts with background preview images:
-
-| Type | Color | Images | Description |
-|------|-------|--------|-------------|
-| Tear | Red | 5 | Longitudinal / transverse belt tears |
-| Hole | Orange | 6 | Punctures and through-holes |
-| Edge Damage | Amber | 7 | Fraying, cracking, delamination |
-| Layer Peeling | Purple | 9 | Cover rubber separating from carcass |
-
-**Detection Grid** — each card shows:
-- Real defect image matched to detection type (deterministic by detection ID)
-- Confidence % with progress bar
-- Belt position (% along belt)
-- Bounding box dimensions (px)
-- Detection timestamp and ID
-- Hover → "View full image" → click for fullscreen lightbox
-
-**Filter controls** — by defect type and severity (High / Medium / Low)
-
-**Live Camera Views:**
-
-| Camera | Source | Description |
-|--------|--------|-------------|
-| Front View (CAM-01) | `front_view.mp4` — full width | Head-on belt view |
-| Side Left (CAM-02) | `front_view.mp4` — left half crop | Left side of belt |
-| Side Right (CAM-03) | `front_view.mp4` — right half crop | Right side of belt |
-| Bottom View (CAM-04) | Image slideshow | Thermal underside |
-
-All active cameras show CCTV overlays: scanlines, vignette, blinking REC dot, live ticking timestamp, mute icon, corner bracket markers.
-
-**Click "Full Screen"** on any video camera → fullscreen popup with the video looping, full CCTV overlays, press Escape to close.
-
-![Vision Detail](docs/screenshots/vision.png)
-
----
-
-### ML Prediction (`/prediction`)
-
-Core predictive intelligence:
-
-- **Model Confidence Banner** — confidence % and next maintenance date
-- **Anomaly Forecast Cards** — 4 cards: days to event, probability %, severity badge, animated bar
-- **Belt Life Timeline** — remaining life vs. 2000h total with maintenance marker
-- **Gauge Charts** — Remaining Life %, Tear Risk %, Burst Risk %, Overheat Risk %
-- **Detailed Risk Breakdown** — horizontal bars with time-to-event labels
-- **Summary Cards** — Maintenance Window, Remaining Life, Overall Risk Level
-- **Smart Insights** — auto-generated maintenance recommendations
-
-![ML Prediction Detail](docs/screenshots/ml-prediction.png)
-
----
-
-### Alerts (`/alerts`)
-
-Alert management:
-
-- All active and historical alerts sorted by severity
-- **Severity levels**: Info (blue) / Warning (amber) / Critical (red)
-- **Alert types**: Overload, Impact Spike, Heat Alert, Tear Risk, Misalignment, Speed Anomaly, Vibration Spike
-- Acknowledge individual alerts or bulk-acknowledge all
-- Alerts auto-generate from the simulator when thresholds are breached
-- High-severity vision detections also generate alerts
+- Side-by-side scrollable UDL Trend and Load Cell vs Impact Force charts
+- Both charts freeze when belt is stopped
+- Engineering Constraints table
 
 ---
 
 ### Work Orders (`/work-orders`)
 
-Maintenance task assignment and notification:
+Assign maintenance tasks. Resolving a ticket unlocks belt restart.
 
-**Tagged Issues** — tag alerts, vision detections, or belt positions before sending:
-- **Alerts tab** — search and tag live alerts
-- **Vision Detections tab** — tag defect detections with ID, position, confidence
-- **Belt Position tab** — search any of the 45 belts, enter a position (e.g. `12.5m`, `Zone 3`, `Head Pulley`)
-
-Tagged items appear as colored chips and auto-append reference lines to the task description.
-
-**Task Details** — Title, Description, Priority (Low / Medium / High / Critical), Due Date
-
-**Notification Channels:**
-
-| Channel | Ticket Format | Use Case |
-|---------|--------------|---------|
-| WhatsApp | MSG-XXXXX | Instant field notification |
-| Email | MSG-XXXXX | Formal work order |
-| SMS | MSG-XXXXX | Mobile text alert |
-| Jira | BELT-XXXXX | Software-style ticket |
-| ServiceNow | SN-XXXXX | ITSM work order |
-| IBM Maximo | WO-XXXXX | EAM work order |
-
-**Engineer Roster:**
-
-| Name | Role | Specialty |
-|------|------|-----------|
-| Rajesh Kumar | Chief / Head | Belt Systems, Root Cause Analysis |
-| Priya Sharma | Maintenance Senior | Conveyor Belts, Tension Adjustment |
-| Arjun Mehta | Maintenance Tech | Belt Splicing, Pulley Alignment |
-| Sunita Patel | Quality Control | Defect Analysis, ISO Compliance |
-| Vikram Singh | Field Service | Emergency Response, Belt Tracking |
-| Deepa Nair | Thermal Specialist | Thermal Imaging, Friction Reduction |
-| Karan Joshi | Electrical & Controls | VFD Control, Sensor Calibration |
-| Meera Iyer | HSE Safety | LOTO Procedures, Incident Investigation |
-
-- Filter by role — All / Head / Maintenance / Quality / Service / Thermal / Electrical / Safety
-- **SUGGESTED** badge on engineers matching the current anomaly type
-- Workload bar per engineer (green < 60%, amber 60–80%, red > 80%)
-- Online / offline availability dot
-
-After sending, a collapsible log shows all dispatched tickets with refs, priority, and timestamp.
-
-![Work Orders Detail](docs/screenshots/work-orders.png)
-
----
-
-### Belt Config (`/config`)
-
-Belt configuration management:
-
-- View and edit physical parameters: width, thickness, length, speed, material type
-- Tensile strength, hardness (Shore A), elastic modulus
-- Create new belt configurations
-- Persisted in the backend in-memory store
-
----
-
-### AI Chat (Floating Button — bottom right)
-
-The floating green bot button opens the BeltGuard AI chat panel:
-
-- **Context-aware** — knows the selected belt, live sensor readings, and ML predictions
-- **Quick-ask chips** — Tear risk, Temperature status, Maintenance when, Vibration analysis, Remaining life, Overall health
-- **GPT-4o-mini** when `OPENAI_API_KEY` is set — full conversational AI with markdown responses
-- **Rule-based fallback** — built-in expert engine, no API key required
-- Chat history persists per session; resets on belt switch
+- Tag alerts, vision detections, or belt positions
+- 6 notification channels: WhatsApp, Email, SMS, Jira, ServiceNow, IBM Maximo
+- After sending: "Mark as Resolved → Unlock Belt Restart" button appears in sent log
+- Clicking it calls `POST /api/plc/clear-gate/ticket` → belt can restart
 
 ---
 
@@ -415,19 +320,44 @@ The floating green bot button opens the BeltGuard AI chat panel:
 | GET | `/api/load/live` | Latest load analysis |
 | GET | `/api/thermal/zones` | All thermal zones |
 | GET | `/api/vision/detections` | Latest 20 vision detections |
-| GET | `/api/alerts` | All alerts (max 100) |
+| DELETE | `/api/vision/detections` | Clear all detections (demo) |
+| GET | `/api/alerts` | All alerts |
 | PATCH | `/api/alerts/:id/acknowledge` | Acknowledge alert |
+| GET | `/api/plc/state` | Current PLC state |
+| POST | `/api/plc/command` | Send PLC command (START/STOP/E_STOP/SET_SPEED/RESET_FAULT) |
+| GET | `/api/plc/auto-rules` | List auto-response rules |
+| PATCH | `/api/plc/auto-rules/:id` | Update rule (threshold, cooldown, enabled) |
+| GET | `/api/plc/commands` | Command audit log |
+| GET | `/api/plc/notifications` | PLC notifications |
+| PATCH | `/api/plc/notifications/read-all` | Mark all notifications read |
+| POST | `/api/plc/clear-gate/ticket` | Clear restart gate via ticket resolution |
+| POST | `/api/plc/clear-gate/defects` | Clear restart gate via defect clearance |
+
+### PLC Command Payload
+
+```json
+{
+  "command": "START" | "STOP" | "E_STOP" | "SET_SPEED" | "RESET_FAULT",
+  "value": 2.5,
+  "operator": "Operator 1",
+  "reason": "Manual start from HMI"
+}
+```
+
+### Clear Gate — Ticket
+
+```json
+{ "ticketRef": "BELT-12345", "resolvedBy": "Rajesh Kumar" }
+```
 
 ### WebSocket — port 8000, path `/ws`
-
-Receives `live_update` every 2 seconds:
 
 ```json
 {
   "type": "live_update",
-  "sensor": { "loadCell": 245, "temperature": 38.2, "vibration": 2.1, ... },
+  "sensor": { "loadCell": 245, "temperature": 38.2, "vibration": 2.1, "beltSpeed": 2.5, "udl": 210, "impactForce": 8.5 },
   "alerts": [ { "id": "...", "severity": "warning", "message": "..." } ],
-  "ts": "2026-04-24T10:00:00Z"
+  "ts": "2026-04-28T10:00:00Z"
 }
 ```
 
@@ -435,186 +365,169 @@ Receives `live_update` every 2 seconds:
 
 | Method | Endpoint | Description |
 |--------|----------|-------------|
-| GET | `/predict` | Auto-fetch sensors from backend and predict |
-| POST | `/predict` | Predict from provided sensor payload |
+| GET | `/predict` | Auto-fetch sensors and predict |
+| POST | `/predict` | Predict from provided payload |
 | GET | `/health` | ML service health check |
 | POST | `/chat` | AI chat with belt context |
-
-**POST /predict:**
-```json
-{
-  "load_cell": 250, "impact_force": 9.0, "belt_speed": 2.5,
-  "temperature": 38.0, "vibration": 2.2, "udl": 210.0
-}
-```
-
-**POST /chat:**
-```json
-{
-  "message": "What is the tear risk?",
-  "history": [],
-  "context": {
-    "belt": { "id": "RM-IRONORE-01", "name": "Iron Ore Belt 1", "material": "Iron Ore" },
-    "prediction": { "tear_probability": 0.23, "remaining_life_hours": 847 },
-    "sensors": { "temperature": 38.2, "vibration": 2.1, "load_cell": 245 }
-  }
-}
-```
 
 ---
 
 ## Architecture
 
 ```
-┌──────────────────────────────────────────────────────────┐
-│                     Browser (React 18)                    │
-│                                                           │
-│  Dashboard  Digital Twin  Vision  ML Prediction           │
-│  Sensors    Thermal       Alerts  Work Orders  Config     │
-│                                                           │
-│  TanStack Query (polling + caching)  Zustand (state)      │
-└──────────────┬───────────────────────────┬───────────────┘
-               │ REST /api/*               │ REST /ml/*
-               │ WebSocket /ws             │ (proxied by Vite)
-               ▼                           ▼
-┌─────────────────────────┐   ┌──────────────────────────────┐
-│  Node.js / Express      │   │  Python / FastAPI             │
-│  Backend  :8000         │   │  ML Service  :8001            │
-│                         │   │                               │
-│  Sensor simulator       │◄──│  GET /predict                 │
-│  In-memory data store   │   │   → fetches /api/sensors/live │
-│  REST API routes        │   │   → runs BeltPredictor        │
-│  WebSocket server       │   │  POST /predict (direct)       │
-│  Alert generation       │   │  POST /chat                   │
-└─────────────────────────┘   │   → LangChain + GPT-4o-mini   │
-                              │   → rule-based fallback        │
-                              └──────────────────────────────┘
+┌──────────────────────────────────────────────────────────────┐
+│                      Browser (React 18)                       │
+│                                                               │
+│  Fleet Overview  Belt Dashboard  Digital Twin  PLC/HMI        │
+│  Sensors  Load  Thermal  Vision  Video  ML  Alerts  WO        │
+│                                                               │
+│  TanStack Query (polling + caching)  Zustand (plcBeltRunning) │
+│  useTimeSeriesBuffer (sliding window, freeze on stop)         │
+│  ScrollableChart (Grafana-style, STOPPED overlay)             │
+│  PLCNotificationToast (sessionStorage dedup, toast stack)     │
+└──────────────┬────────────────────────────┬──────────────────┘
+               │ REST /api/*                │ REST /ml/*
+               │ WebSocket /ws              │ (proxied by Vite)
+               ▼                            ▼
+┌──────────────────────────┐   ┌──────────────────────────────┐
+│  Node.js / Express :8000 │   │  Python / FastAPI :8001       │
+│                          │   │                               │
+│  Sensor simulator        │◄──│  GET /predict                 │
+│  PLC auto-rule engine    │   │   → fetches /api/sensors/live │
+│  10-min sustained gate   │   │   → runs BeltPredictor        │
+│  Restart gate logic      │   │  POST /chat                   │
+│  In-memory data store    │   │   → LangChain + GPT-4o-mini   │
+│  REST API routes         │   │   → rule-based fallback        │
+│  WebSocket server        │   └──────────────────────────────┘
+└──────────────────────────┘
 ```
 
-**Data flow:**
-1. Backend simulator generates sensor readings every 2 s → stored in memory ring buffer
-2. Frontend polls `/api/sensors/live` every 2 s and `/api/sensors/history` for charts
-3. ML service polls `/api/sensors/live` every 10 s → runs physics-informed predictor → returns risk scores
-4. Frontend polls `/ml/predict` every 10 s → updates all prediction UI
-5. WebSocket pushes live sensor + alert updates to all connected clients instantly
-6. Vision detections generated every ~60 s by simulator
-7. Alerts auto-generated when sensor thresholds are breached
+**Data flow when belt is running:**
+1. Simulator generates sensor readings every 2s → ring buffer (max 500)
+2. Frontend polls `/api/sensors/live` every 2s, `/api/sensors/history` for charts
+3. `useTimeSeriesBuffer` merges new points into session buffer (max 2000)
+4. `ScrollableChart` renders buffer, auto-scrolls to latest
+5. PLC auto-rule engine evaluates rules on every tick
+6. If condition sustained 10 min → belt stops, restart gate activated
+
+**Data flow when belt is stopped:**
+1. Simulator skips sensor generation (no new readings)
+2. Frontend polling stops (`refetchInterval: false`)
+3. Buffer freezes at last reading
+4. Charts show STOPPED overlay
+5. Belt cannot restart until gate is cleared
+
+---
+
+## PLC Auto-Rule Engine
+
+The simulator evaluates auto-rules on every 2-second tick:
+
+```
+For each enabled rule:
+  1. Check cooldown (skip if within cooldown window)
+  2. Evaluate condition (metric > threshold)
+  3. Special: vision rule requires 2+ high detections in 10-min window
+  4. If condition just became true:
+     → Push "CONDITION DETECTED" warning notification
+     → Start 10-minute timer
+  5. If condition active < 10 min:
+     → Push monitoring reminder every 2 min
+  6. If condition active ≥ 10 min:
+     → Execute action (E_STOP / STOP / REDUCE_SPEED / ALERT_ONLY)
+     → Set restartGated = true (for stop actions)
+     → Push critical notification to all workers
+```
 
 ---
 
 ## Tech Stack
 
 ### Frontend
-| Library | Version | Purpose |
-|---------|---------|---------|
-| React | 18 | UI framework |
-| TypeScript | 5 | Type safety |
-| Vite | 5 | Build tool and dev server |
-| Tailwind CSS | 3 | Utility-first styling |
-| Framer Motion | 11 | Animations and transitions |
-| TanStack Query | 5 | Server state, caching, polling |
-| Zustand | 4 | Client state (theme, belt selection) |
-| React Router | 6 | Client-side routing |
-| Three.js + R3F | 0.165 | 3D Digital Twin rendering |
-| Chart.js | 4 | Line charts and gauges |
-| Lucide React | 0.395 | Icon library |
-| React Markdown | 9 | Markdown in AI chat |
-| Axios | 1.7 | HTTP client |
+| Library | Purpose |
+|---------|---------|
+| React 18 + TypeScript 5 | UI framework |
+| Vite 5 | Build tool |
+| Tailwind CSS 3 | Styling |
+| Framer Motion 11 | Animations |
+| TanStack Query 5 | Server state, polling |
+| Zustand 4 | Client state (plcBeltRunning, belt selection, theme) |
+| React Router 6 | Routing |
+| Three.js + React Three Fiber | 3D Digital Twin |
+| Chart.js 4 | Scrollable time-series charts |
+| Lucide React | Icons |
+| Axios | HTTP client |
 
 ### Backend
-| Library | Version | Purpose |
-|---------|---------|---------|
-| Express | 4 | HTTP server and routing |
-| TypeScript | 5 | Type safety |
-| ws | 8 | WebSocket server |
-| helmet | 7 | Security headers |
-| cors | 2 | Cross-origin requests |
-| morgan | 1 | HTTP request logging |
-| uuid | 10 | Unique ID generation |
-| ts-node-dev | 2 | Hot reload in development |
+| Library | Purpose |
+|---------|---------|
+| Express 4 | HTTP server |
+| TypeScript 5 | Type safety |
+| ws | WebSocket server |
+| helmet + cors | Security |
+| uuid | ID generation |
 
 ### ML Service
-| Library | Version | Purpose |
-|---------|---------|---------|
-| FastAPI | 0.111 | Async HTTP framework |
-| Pydantic | 2.7 | Request/response validation |
-| scikit-learn | 1.5 | ML model infrastructure |
-| numpy | 1.26 | Numerical computation |
-| LangChain | 0.2 | LLM orchestration |
-| langchain-openai | 0.1 | GPT-4o-mini integration |
-| httpx | 0.27 | Async HTTP client |
-| uvicorn | 0.30 | ASGI server |
+| Library | Purpose |
+|---------|---------|
+| FastAPI | Async HTTP framework |
+| Pydantic 2 | Validation |
+| scikit-learn | ML model |
+| LangChain + langchain-openai | GPT-4o-mini chat |
+| httpx | Async HTTP client |
+| uvicorn | ASGI server |
 
 ---
 
 ## Developer Guide
 
-### Adding a new sensor channel
+### Adding a new PLC auto-rule
 
-1. Add field to `SensorReading` in `backend/src/types/index.ts`
-2. Generate it in `backend/src/simulator.ts`
-3. Add to `SensorFeatures` in `ml-service/models/belt_predictor.py`
-4. Update frontend type in `frontend/src/types/index.ts`
-5. Display in `frontend/src/pages/SensorsPage.tsx`
+Edit `backend/src/store/inMemory.ts` — add to `plcAutoRules`:
 
-### Replacing the rule-based predictor with a trained ML model
-
-Edit `ml-service/models/belt_predictor.py` — replace the `predict()` body:
-
-```python
-import joblib
-import numpy as np
-
-# Load once at module level
-_model = joblib.load("models/belt_rf_model.pkl")
-
-def predict(self, features: SensorFeatures) -> PredictionResult:
-    X = np.array([[
-        features.load_cell, features.impact_force, features.belt_speed,
-        features.temperature, features.vibration, features.udl
-    ]])
-    preds = _model.predict(X)[0]
-    return PredictionResult(
-        remaining_life_hours=preds[0],
-        tear_probability=preds[1],
-        # ...
-    )
+```typescript
+{
+  id: uuid(),
+  name: 'My Rule',
+  condition: 'Metric > threshold for 10 min',
+  action: 'Description of action',
+  enabled: true,
+  triggerCount: 0,
+  metric: 'loadCell',      // loadCell | udl | temperature | vibration | impactForce | visionConfidence
+  threshold: 400,
+  operator: '>',
+  triggerAction: 'E_STOP', // E_STOP | STOP | REDUCE_SPEED | ALERT_ONLY
+  reduceSpeedTo: 1.5,      // only for REDUCE_SPEED
+  cooldownSeconds: 600,
+}
 ```
 
-### Adding a new page
+### Connecting real PLC hardware
 
-1. Create `frontend/src/pages/MyPage.tsx`
-2. Add route in `frontend/src/App.tsx`: `<Route path="my-page" element={<MyPage />} />`
-3. Add nav item in `frontend/src/components/layout/Sidebar.tsx`
+Replace the in-memory `plcState` with OPC-UA / Modbus TCP reads:
 
-### Connecting real sensors (replacing the simulator)
+```typescript
+// OPC-UA example
+import { OPCUAClient } from 'node-opcua';
+const client = OPCUAClient.create({ endpointMustExist: false });
+await client.connect('opc.tcp://plc-host:4840');
+// Read belt state, write commands via OPC-UA nodes
+```
+
+### Replacing the simulator with real sensors
 
 Edit `backend/src/simulator.ts` — replace `setInterval` with your data source:
 
 ```typescript
-// MQTT example
 import mqtt from 'mqtt';
 const client = mqtt.connect('mqtt://your-broker:1883');
 client.subscribe('plant/belt/sensors');
 client.on('message', (_topic, payload) => {
   const reading = JSON.parse(payload.toString()) as SensorReading;
   pushSensor(reading);
+  runAutoRules(reading, 0);
 });
 ```
-
-Supported protocols: MQTT, OPC-UA, Modbus TCP, REST webhooks, Kafka.
-
-### Remote access via ngrok
-
-```bash
-# Expose backend
-ngrok http 8000
-
-# Expose ML service
-ngrok http 8001
-```
-
-Update `frontend/vite.config.ts` proxy targets with the ngrok URLs. The backend and ML service already include `ngrok-skip-browser-warning` headers on all responses.
 
 ---
 
@@ -626,49 +539,42 @@ Update `frontend/vite.config.ts` proxy targets with the ngrok URLs. The backend 
 |----------|---------|-------------|
 | `PORT` | `8000` | HTTP server port |
 | `NODE_ENV` | `development` | Environment mode |
-| `ML_SERVICE_URL` | `http://localhost:8001` | ML service base URL |
+| `ML_SERVICE_URL` | `http://localhost:8001` | ML service URL |
 | `CORS_ORIGIN` | `*` | Allowed CORS origins |
 
 ### ML Service (`ml-service/.env`)
 
 | Variable | Default | Description |
 |----------|---------|-------------|
-| `ML_PORT` | `8001` | FastAPI server port |
-| `BACKEND_URL` | `http://localhost:8000` | Backend URL for sensor fetching |
-| `OPENAI_API_KEY` | _(empty)_ | Enables GPT-4o-mini AI chat |
+| `ML_PORT` | `8001` | FastAPI port |
+| `BACKEND_URL` | `http://localhost:8000` | Backend URL |
+| `OPENAI_API_KEY` | _(empty)_ | Enables GPT-4o-mini |
 
 ---
 
 ## Troubleshooting
 
-**Frontend shows no data**
-- Confirm backend is running on port 8000
-- Check browser console for CORS or network errors
-- Verify `vite.config.ts` proxy targets match your backend URL
+**Charts are empty**
+- Confirm backend is running and generating sensor data
+- Check browser console for network errors
+- If belt is stopped, charts show last readings before stop — this is correct behaviour
+
+**Belt keeps auto-stopping immediately**
+- Check PLC auto-rules thresholds on the PLC page — default thresholds are realistic (480 kg, 40 kN, 100°C)
+- The 10-minute gate means the belt won't stop on a single spike — condition must persist
+
+**Belt won't restart after auto-stop**
+- The restart gate is active — go to PLC page to see the restart gate banner
+- Option 1: Enter a work order ticket reference and click Confirm
+- Option 2: Click "Clear Defects & Unlock" or use the "Clear Defects" button on the Dashboard
+
+**Notifications re-appearing after refresh**
+- This was fixed — seen IDs are stored in sessionStorage
+- If still happening, clear sessionStorage: `sessionStorage.removeItem('plc-notif-seen')`
 
 **ML predictions not updating**
 - Confirm ML service is running on port 8001
-- Check `BACKEND_URL` in `ml-service/.env`
-- The frontend uses mock prediction data when ML service is unreachable — this is by design
-
-**AI chat only shows rule-based responses**
-- Add `OPENAI_API_KEY` to `ml-service/.env` and restart the ML service
-- Without the key the rule-based engine handles all questions — it covers all standard belt health queries
-
-**Video not playing in Vision page**
-- Confirm `frontend/src/assets/front_view.mp4` exists
-- Browser autoplay policy requires a user gesture — click "View" to activate the feed
-
-**Port conflicts**
-```bash
-# Backend on different port
-echo "PORT=8080" >> backend/.env
-
-# ML service on different port
-echo "ML_PORT=8002" >> ml-service/.env
-
-# Update vite.config.ts proxy targets to match
-```
+- Frontend uses mock data when ML service is unreachable — this is by design
 
 ---
 

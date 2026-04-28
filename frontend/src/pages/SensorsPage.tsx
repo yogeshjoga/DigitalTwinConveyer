@@ -232,6 +232,7 @@ export default function SensorsPage() {
                 pointCount={labels.length}
                 height={160}
                 accentColor={s.color}
+                isFrozen={buf.isFrozen}
                 badge={
                   <span
                     className="text-xs font-mono font-bold px-2 py-0.5 rounded"
@@ -276,6 +277,7 @@ export default function SensorsPage() {
         pointCount={labels.length}
         height={220}
         accentColor="#8b5cf6"
+        isFrozen={buf.isFrozen}
       >
         {(_w, _h, anim) => (
           <Line

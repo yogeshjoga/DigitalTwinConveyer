@@ -1,5 +1,7 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { apiClient, mlClient } from './client';
+import { useBeltStore } from '@/store/useBeltStore';
+import { apiClient, mlClient } from './client';
 import type {
   BeltConfig,
   SensorReading,
@@ -48,23 +50,28 @@ export const useUpdateBelt = () => {
 };
 
 // ─── Sensors ──────────────────────────────────────────────────────────────────
-export const useLiveSensors = () =>
-  useQuery<SensorReading>({
+export const useLiveSensors = () => {
+  const plcRunning = useBeltStore((s) => s.plcBeltRunning);
+  return useQuery<SensorReading>({
     queryKey: ['sensors', 'live'],
     queryFn: () => apiClient.get('/sensors/live').then((r) => r.data),
-    refetchInterval: 2000,
+    // Always fetch at least once (for initial display); stop polling when belt is stopped
+    refetchInterval: plcRunning ? 2000 : false,
   });
+};
 
-export const useSensorHistory = (minutes = 30) =>
-  useQuery<SensorReading[]>({
+export const useSensorHistory = (minutes = 30) => {
+  const plcRunning = useBeltStore((s) => s.plcBeltRunning);
+  return useQuery<SensorReading[]>({
     queryKey: ['sensors', 'history', minutes],
     queryFn: () =>
       apiClient.get(`/sensors/history?minutes=${minutes}`).then((r) => r.data),
-    // Match the backend simulator interval (2 s) for lowest latency.
-    // The buffer deduplicates by timestamp so re-fetching is safe.
-    refetchInterval: 2000,
+    // Always fetch once on mount to show historical data even when stopped.
+    // Continuous polling only when belt is running.
+    refetchInterval: plcRunning ? 2000 : false,
     staleTime: 0,
   });
+};
 
 // ─── Load Analysis ────────────────────────────────────────────────────────────
 export const useLoadAnalysis = () =>

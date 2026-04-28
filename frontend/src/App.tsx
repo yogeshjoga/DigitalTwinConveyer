@@ -1,5 +1,6 @@
 import { Routes, Route, Navigate } from 'react-router-dom';
 import Layout from '@/components/layout/Layout';
+import MainDashboardPage from '@/pages/MainDashboardPage';
 import DashboardPage from '@/pages/DashboardPage';
 import BeltConfigPage from '@/pages/BeltConfigPage';
 import SensorsPage from '@/pages/SensorsPage';
@@ -19,7 +20,7 @@ export default function App() {
   return (
     <Routes>
       <Route path="/" element={<Layout />}>
-        <Route index element={<Navigate to="/dashboard" replace />} />
+        <Route index element={<MainDashboardPage />} />
         <Route path="dashboard"       element={<DashboardPage />} />
         <Route path="digital-twin"    element={<DigitalTwinPage />} />
         <Route path="load"            element={<LoadAnalysisPage />} />

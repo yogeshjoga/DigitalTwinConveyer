@@ -25,6 +25,8 @@ interface ScrollableChartProps {
   onStateChange?: (zoom: number, autoScroll: boolean) => void;
   className?: string;
   accentColor?: string;
+  /** When true, shows a BELT STOPPED overlay and disables scroll animation */
+  isFrozen?: boolean;
 }
 
 export default function ScrollableChart({
@@ -38,6 +40,7 @@ export default function ScrollableChart({
   onStateChange,
   className = '',
   accentColor = '#27a372',
+  isFrozen = false,
 }: ScrollableChartProps) {
   const scrollRef      = useRef<HTMLDivElement>(null);
   const prevCount      = useRef(0);
@@ -139,17 +142,17 @@ export default function ScrollableChart({
             <RotateCcw size={12} />
           </button>
 
-          {/* LIVE / PAUSED pill */}
+          {/* LIVE / PAUSED / STOPPED pill */}
           <div className="flex items-center gap-1.5 ml-1 px-2 py-1 rounded-lg transition-colors"
             style={{
-              backgroundColor: autoScroll ? accentColor + '18' : 'var(--color-surface)',
+              backgroundColor: isFrozen ? '#ef444418' : autoScroll ? accentColor + '18' : 'var(--color-surface)',
               border: '1px solid var(--color-border)',
             }}>
-            <span className={`w-1.5 h-1.5 rounded-full flex-shrink-0 ${autoScroll ? 'animate-pulse' : ''}`}
-              style={{ backgroundColor: autoScroll ? accentColor : '#94a3b8' }} />
+            <span className={`w-1.5 h-1.5 rounded-full flex-shrink-0 ${!isFrozen && autoScroll ? 'animate-pulse' : ''}`}
+              style={{ backgroundColor: isFrozen ? '#ef4444' : autoScroll ? accentColor : '#94a3b8' }} />
             <span className="text-[10px] font-mono font-semibold"
-              style={{ color: autoScroll ? accentColor : 'var(--text-muted)' }}>
-              {autoScroll ? 'LIVE' : 'PAUSED'}
+              style={{ color: isFrozen ? '#ef4444' : autoScroll ? accentColor : 'var(--text-muted)' }}>
+              {isFrozen ? 'STOPPED' : autoScroll ? 'LIVE' : 'PAUSED'}
             </span>
           </div>
 
@@ -164,17 +167,33 @@ export default function ScrollableChart({
         ref={scrollRef}
         onScroll={handleScroll}
         className="overflow-x-auto overflow-y-hidden"
-        style={{ cursor: 'grab', WebkitOverflowScrolling: 'touch' }}
+        style={{ cursor: isFrozen ? 'default' : 'grab', WebkitOverflowScrolling: 'touch' }}
       >
         {/* position:relative required for Chart.js responsive mode */}
         <div style={{ position: 'relative', width: chartWidth, height, minWidth: '100%' }}>
           {children(chartWidth, height, animationOpts)}
+          {/* Frozen overlay — subtle red tint when belt is stopped */}
+          {isFrozen && (
+            <div
+              className="absolute inset-0 flex items-center justify-center pointer-events-none"
+              style={{ backgroundColor: 'rgba(239,68,68,0.04)' }}
+            >
+              <span
+                className="px-3 py-1 rounded-full text-[10px] font-bold uppercase tracking-widest"
+                style={{ backgroundColor: 'rgba(239,68,68,0.12)', color: '#ef4444', border: '1px solid rgba(239,68,68,0.3)' }}
+              >
+                ⏸ Belt Stopped — Data Frozen
+              </span>
+            </div>
+          )}
         </div>
       </div>
 
       {/* Footer */}
       <div className="px-4 pb-2.5 pt-1 flex items-center justify-between flex-shrink-0">
-        <span className="text-[10px] text-muted">← scroll for history · zoom ±</span>
+        <span className="text-[10px] text-muted">
+          {isFrozen ? '⏸ Belt stopped — chart frozen at last reading' : '← scroll for history · zoom ±'}
+        </span>
         <span className="text-[10px] font-mono text-muted">{zoom.toFixed(2)}×</span>
       </div>
     </div>

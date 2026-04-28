@@ -54,7 +54,7 @@ export const thermalZones: ThermalZone[] = Array.from({ length: 10 }, (_, i) => 
 export const visionDetections: VisionDetection[] = [];
 
 // ── PLC / HMI State ───────────────────────────────────────────────────────────
-import type { PLCState, PLCCommand, PLCAutoRule } from '../types';
+import type { PLCState, PLCCommand, PLCAutoRule, PLCNotification } from '../types';
 
 export const plcState: PLCState & {
   autoStopReason: string | null;
@@ -131,34 +131,34 @@ export function pushPLCCommand(cmd: PLCCommand) {
 export const plcAutoRules: PLCAutoRule[] = [
   {
     id: uuid(),
-    name: 'Heavy Load → E-Stop',
-    condition: 'Load Cell > 70 kg',
+    name: 'Sustained Overload → E-Stop',
+    condition: 'Load Cell > 480 kg for 10 min',
     action: 'Emergency stop belt',
     enabled: true,
     triggerCount: 0,
     metric: 'loadCell',
-    threshold: 70,
+    threshold: 480,
     operator: '>',
     triggerAction: 'E_STOP',
-    cooldownSeconds: 30,
+    cooldownSeconds: 600,   // 10 min cooldown after trigger
   },
   {
     id: uuid(),
-    name: 'High Impact Force → E-Stop',
-    condition: 'Impact Force > 85 kN',
+    name: 'Critical Impact Force → E-Stop',
+    condition: 'Impact Force > 40 kN for 10 min',
     action: 'Emergency stop belt',
     enabled: true,
     triggerCount: 0,
     metric: 'impactForce',
-    threshold: 85,
+    threshold: 40,
     operator: '>',
     triggerAction: 'E_STOP',
-    cooldownSeconds: 30,
+    cooldownSeconds: 600,
   },
   {
     id: uuid(),
-    name: 'Vision Defect → E-Stop',
-    condition: 'Vision confidence > 85%',
+    name: 'Vision Critical Defect → E-Stop',
+    condition: '2+ high-severity detections in 10 min',
     action: 'Emergency stop belt',
     enabled: true,
     triggerCount: 0,
@@ -166,26 +166,26 @@ export const plcAutoRules: PLCAutoRule[] = [
     threshold: 0.85,
     operator: '>',
     triggerAction: 'E_STOP',
-    cooldownSeconds: 60,
+    cooldownSeconds: 600,
   },
   {
     id: uuid(),
-    name: 'Overload → Reduce Speed',
-    condition: 'UDL > 400 kg/m',
+    name: 'High Load → Reduce Speed',
+    condition: 'UDL > 420 kg/m',
     action: 'Reduce speed to 1.5 m/s',
     enabled: true,
     triggerCount: 0,
     metric: 'udl',
-    threshold: 400,
+    threshold: 420,
     operator: '>',
     triggerAction: 'REDUCE_SPEED',
     reduceSpeedTo: 1.5,
-    cooldownSeconds: 20,
+    cooldownSeconds: 60,
   },
   {
     id: uuid(),
     name: 'High Temperature → Stop',
-    condition: 'Temperature > 100°C',
+    condition: 'Temperature > 100°C for 10 min',
     action: 'Stop belt and alert operator',
     enabled: true,
     triggerCount: 0,
@@ -193,20 +193,20 @@ export const plcAutoRules: PLCAutoRule[] = [
     threshold: 100,
     operator: '>',
     triggerAction: 'STOP',
-    cooldownSeconds: 60,
+    cooldownSeconds: 600,
   },
   {
     id: uuid(),
     name: 'Vibration Spike → Alert Only',
     condition: 'Vibration > 12 mm/s',
     action: 'Trigger alarm, continue running',
-    enabled: false,
+    enabled: true,
     triggerCount: 0,
     metric: 'vibration',
     threshold: 12,
     operator: '>',
     triggerAction: 'ALERT_ONLY',
-    cooldownSeconds: 15,
+    cooldownSeconds: 30,
   },
 ];
 

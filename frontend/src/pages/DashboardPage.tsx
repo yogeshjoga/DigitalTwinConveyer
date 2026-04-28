@@ -140,7 +140,7 @@ function useBeltAwareHistory(belt: BeltEntry) {
   const mods = useMemo(() => getBeltModifiers(belt), [belt.id]);
 
   return useMemo(() => {
-    if (!rawHistory) return [];
+    if (!rawHistory) return undefined;  // undefined = not loaded yet; [] = loaded but empty
     return rawHistory.map((r, i) => ({
       ...r,
       udl:         r.udl * mods.loadMult * (0.95 + seededRand(belt.id, i) * 0.1),
@@ -364,6 +364,7 @@ export default function DashboardPage() {
             pointCount={udlBuf.labels.length}
             height={192}
             accentColor={selectedBelt.color}
+            isFrozen={udlBuf.isFrozen}
             badge={
               <span
                 className="text-xs font-medium px-2 py-0.5 rounded-full"

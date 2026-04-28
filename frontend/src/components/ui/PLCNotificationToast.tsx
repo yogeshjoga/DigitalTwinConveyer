@@ -20,9 +20,28 @@ export const SEVERITY_CONFIG = {
 const MAX_VISIBLE    = 3;
 const AUTO_DISMISS_MS = 8000;
 
+const SEEN_KEY = 'plc-notif-seen';
+
+function loadSeenIds(): Set<string> {
+  try {
+    const raw = sessionStorage.getItem(SEEN_KEY);
+    return raw ? new Set(JSON.parse(raw) as string[]) : new Set();
+  } catch {
+    return new Set();
+  }
+}
+
+function saveSeenIds(ids: Set<string>) {
+  try {
+    // Keep only last 200 ids to avoid unbounded growth
+    const arr = [...ids].slice(-200);
+    sessionStorage.setItem(SEEN_KEY, JSON.stringify(arr));
+  } catch {}
+}
+
 export default function PLCNotificationToast() {
   const { data: notifications } = usePLCNotifications();
-  const seenIds = useRef<Set<string>>(new Set());
+  const seenIds = useRef<Set<string>>(loadSeenIds());
   const [toasts, setToasts] = useState<PLCNotification[]>([]);
 
   useEffect(() => {
@@ -31,6 +50,7 @@ export default function PLCNotificationToast() {
     if (!newOnes.length) return;
 
     newOnes.forEach((n) => seenIds.current.add(n.id));
+    saveSeenIds(seenIds.current);
     setToasts((prev) => [...newOnes, ...prev].slice(0, MAX_VISIBLE));
 
     newOnes.forEach((n) => {

@@ -178,6 +178,7 @@ export default function LoadAnalysisPage() {
           pointCount={labels.length}
           height={220}
           accentColor="#27a372"
+          isFrozen={buf.isFrozen}
         >
           {(_w, _h, anim) => (
             <Line
@@ -210,6 +211,7 @@ export default function LoadAnalysisPage() {
           pointCount={labels.length}
           height={220}
           accentColor="#3b82f6"
+          isFrozen={buf.isFrozen}
         >
           {(_w, _h, anim) => (
             <Bar
