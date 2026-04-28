@@ -8,14 +8,16 @@ import {
   Tooltip,
   Legend,
 } from 'chart.js';
+import type { ChartOptions } from 'chart.js';
 import { Line } from 'react-chartjs-2';
 import { useLiveSensors, useSensorHistory } from '@/api/hooks';
 import { Activity, Thermometer, Zap, Wind } from 'lucide-react';
 import StatCard from '@/components/ui/StatCard';
-import ChartCard from '@/components/ui/ChartCard';
+import ScrollableChart from '@/components/ui/ScrollableChart';
 import { motion } from 'framer-motion';
 import { useBeltStore } from '@/store/useBeltStore';
-import { lineChartOptions } from '@/lib/chartConfig';
+import { getThemeColors } from '@/lib/chartConfig';
+import { useMultiSeriesBuffer } from '@/lib/useTimeSeriesBuffer';
 
 ChartJS.register(CategoryScale, LinearScale, PointElement, LineElement, Filler, Tooltip, Legend);
 
@@ -24,12 +26,16 @@ export default function SensorsPage() {
   const { data: history } = useSensorHistory(30);
   const theme             = useBeltStore((s) => s.theme);
   const isDark            = theme === 'dark';
+  const colors            = getThemeColors(isDark);
 
-  const timeLabels = history?.map((r) =>
-    new Date(r.timestamp).toLocaleTimeString([], {
-      hour: '2-digit', minute: '2-digit', second: '2-digit',
-    })
-  ) ?? [];
+  // Accumulate all sensor fields into one shared buffer
+  const buf = useMultiSeriesBuffer(
+    'sensors-page',
+    history,
+    ['loadCell', 'temperature', 'vibration', 'beltSpeed'],
+    2000,
+  );
+  const { labels, series } = buf;
 
   const sensors = [
     {
@@ -39,7 +45,7 @@ export default function SensorsPage() {
       color: '#27a372',
       icon: Zap,
       value: live?.loadCell,
-      data: history?.map((r) => r.loadCell) ?? [],
+      data: series['loadCell'] ?? [],
       warnAt: 400,
       critAt: 480,
     },
@@ -50,7 +56,7 @@ export default function SensorsPage() {
       color: '#ef4444',
       icon: Thermometer,
       value: live?.temperature,
-      data: history?.map((r) => r.temperature) ?? [],
+      data: series['temperature'] ?? [],
       warnAt: 60,
       critAt: 80,
     },
@@ -61,7 +67,7 @@ export default function SensorsPage() {
       color: '#f59e0b',
       icon: Activity,
       value: live?.vibration,
-      data: history?.map((r) => r.vibration) ?? [],
+      data: series['vibration'] ?? [],
       warnAt: 5,
       critAt: 10,
     },
@@ -72,11 +78,115 @@ export default function SensorsPage() {
       color: '#3b82f6',
       icon: Wind,
       value: live?.beltSpeed,
-      data: history?.map((r) => r.beltSpeed) ?? [],
+      data: series['beltSpeed'] ?? [],
       warnAt: 5.5,
       critAt: 6,
     },
   ];
+
+  // Build Chart.js options — responsive:true so Chart.js fills the container div
+  function makeSensorOpts(unit: string): ChartOptions<'line'> {
+    return {
+      responsive: true,
+      maintainAspectRatio: false,
+      animation: false,
+      interaction: { mode: 'index', intersect: false },
+      plugins: {
+        legend: { display: false },
+        tooltip: {
+          enabled: true,
+          mode: 'index',
+          intersect: false,
+          backgroundColor: colors.tooltip.bg,
+          borderColor: colors.tooltip.border,
+          borderWidth: 1,
+          titleColor: colors.tooltip.title,
+          bodyColor: colors.tooltip.body,
+          titleFont: { size: 11, weight: 'bold', family: 'Inter, sans-serif' },
+          bodyFont: { size: 11, family: 'Inter, sans-serif' },
+          padding: { x: 12, y: 8 },
+          cornerRadius: 8,
+          callbacks: {
+            title: (items) => items[0]?.label ?? '',
+            label: (ctx) => `  ${typeof ctx.parsed.y === 'number' ? ctx.parsed.y.toFixed(2) : ctx.parsed.y} ${unit}`,
+          },
+        },
+      },
+      scales: {
+        x: {
+          display: true,
+          grid: { color: colors.grid },
+          ticks: {
+            color: colors.tick,
+            font: { size: 9 },
+            maxRotation: 0,
+            callback: (_val, idx) => idx % 30 === 0 ? labels[idx] : '',
+          },
+        },
+        y: {
+          grid: { color: colors.grid },
+          ticks: { color: colors.tick, font: { size: 10 } },
+        },
+      },
+      elements: {
+        point: { radius: 0, hoverRadius: 5, hoverBorderWidth: 2, hoverBackgroundColor: '#ffffff' },
+        line:  { borderWidth: 2 },
+      },
+    };
+  }
+
+  const overlayOpts: ChartOptions<'line'> = {
+    responsive: true,
+    maintainAspectRatio: false,
+    animation: false,
+    interaction: { mode: 'index', intersect: false },
+    plugins: {
+      legend: {
+        display: true,
+        labels: { color: colors.tick, font: { size: 11 }, boxWidth: 12, padding: 16 },
+      },
+      tooltip: {
+        enabled: true,
+        mode: 'index',
+        intersect: false,
+        backgroundColor: colors.tooltip.bg,
+        borderColor: colors.tooltip.border,
+        borderWidth: 1,
+        titleColor: colors.tooltip.title,
+        bodyColor: colors.tooltip.body,
+        titleFont: { size: 11, weight: 'bold', family: 'Inter, sans-serif' },
+        bodyFont: { size: 11, family: 'Inter, sans-serif' },
+        padding: { x: 12, y: 8 },
+        cornerRadius: 8,
+        callbacks: {
+          title: (items) => items[0]?.label ?? '',
+          label: (ctx) => `  ${ctx.dataset.label}: ${typeof ctx.parsed.y === 'number' ? ctx.parsed.y.toFixed(3) : ctx.parsed.y}`,
+        },
+      },
+    },
+    scales: {
+      x: {
+        display: true,
+        grid: { color: colors.grid },
+        ticks: {
+          color: colors.tick,
+          font: { size: 9 },
+          maxRotation: 0,
+          callback: (_val, idx) => idx % 30 === 0 ? labels[idx] : '',
+        },
+      },
+      y: {
+        grid: { color: colors.grid },
+        ticks: { color: colors.tick, font: { size: 10 } },
+        min: 0,
+        max: 1.1,
+      },
+    },
+    elements: {
+      point: { radius: 0, hoverRadius: 5, hoverBorderWidth: 2, hoverBackgroundColor: '#ffffff' },
+      line:  { borderWidth: 1.5 },
+    },
+  };
 
   return (
     <div className="space-y-6">
@@ -84,17 +194,7 @@ export default function SensorsPage() {
       <div>
         <h1 className="text-2xl font-bold text-primary">Sensor Monitoring</h1>
         <p className="text-secondary text-sm mt-1">
-          Live readings — hover any chart to inspect values · click{' '}
-          <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-xs border"
-            style={{ borderColor: 'var(--color-border)' }}>
-            ⤢
-          </span>{' '}
-          to fullscreen · click{' '}
-          <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-xs border"
-            style={{ borderColor: 'var(--color-border)' }}>
-            —
-          </span>{' '}
-          to minimize
+          Live readings — scroll ← on any chart to explore history · zoom ± for density
         </p>
       </div>
 
@@ -118,41 +218,7 @@ export default function SensorsPage() {
       {/* Individual sensor charts — 2-column grid */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         {sensors.map((s, i) => {
-          const opts = lineChartOptions(isDark, {
-            unit: s.unit,
-            showLegend: false,
-            showXAxis: false,
-            labelFormatter: (l) => l,
-          });
-
-          const chartData = {
-            labels: timeLabels,
-            datasets: [{
-              label: s.label,
-              data: s.data,
-              borderColor: s.color,
-              backgroundColor: s.color + '18',
-              fill: true,
-              tension: 0.4,
-              pointRadius: 0,
-              pointHoverRadius: 5,
-              pointHoverBackgroundColor: s.color,
-              pointHoverBorderColor: '#ffffff',
-              pointHoverBorderWidth: 2,
-              borderWidth: 2,
-            }],
-          };
-
-          // Live value badge shown in card header
-          const badge = (
-            <span
-              className="text-xs font-mono font-bold px-2 py-0.5 rounded"
-              style={{ background: s.color + '22', color: s.color }}
-            >
-              {s.value?.toFixed(2) ?? '—'} {s.unit}
-            </span>
-          );
-
+          const opts = makeSensorOpts(s.unit);
           return (
             <motion.div
               key={s.key}
@@ -160,58 +226,80 @@ export default function SensorsPage() {
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: i * 0.06 }}
             >
-              <ChartCard
+              <ScrollableChart
                 title={`${s.label} Trend`}
-                subtitle="Hover to inspect values"
-                badge={badge}
-                color={s.color}
-                defaultHeight={160}
-                liveValue={s.value}
-                unit={s.unit}
-                warnAt={s.warnAt}
-                critAt={s.critAt}
-                data={s.data}
+                subtitle={`${s.unit} — scroll ← for history`}
+                pointCount={labels.length}
+                height={160}
+                accentColor={s.color}
+                badge={
+                  <span
+                    className="text-xs font-mono font-bold px-2 py-0.5 rounded"
+                    style={{ background: s.color + '22', color: s.color }}
+                  >
+                    {s.value?.toFixed(2) ?? '—'} {s.unit}
+                  </span>
+                }
               >
-                <Line data={chartData} options={opts} />
-              </ChartCard>
+                {(_w, _h, anim) => (
+                  <Line
+                    data={{
+                      labels,
+                      datasets: [{
+                        label: s.label,
+                        data: s.data,
+                        borderColor: s.color,
+                        backgroundColor: s.color + '18',
+                        fill: true,
+                        tension: 0.4,
+                        pointRadius: 0,
+                        pointHoverRadius: 5,
+                        pointHoverBackgroundColor: s.color,
+                        pointHoverBorderColor: '#ffffff',
+                        pointHoverBorderWidth: 2,
+                        borderWidth: 2,
+                      }],
+                    }}
+                    options={{ ...opts, ...anim }}
+                  />
+                )}
+              </ScrollableChart>
             </motion.div>
           );
         })}
       </div>
 
       {/* Combined normalised overlay chart */}
-      <ChartCard
+      <ScrollableChart
         title="All Sensors — Normalised Overlay"
-        subtitle="Values normalised 0–1 against their critical threshold. Hover to compare all sensors at the same timestamp."
-        color="#8b5cf6"
-        defaultHeight={220}
-        data={sensors.flatMap((s) => s.data.map((v) => v / s.critAt))}
+        subtitle="Values normalised 0–1 against critical threshold · scroll ← for history"
+        pointCount={labels.length}
+        height={220}
+        accentColor="#8b5cf6"
       >
-        <Line
-          data={{
-            labels: timeLabels,
-            datasets: sensors.map((s) => ({
-              label: `${s.label} (${s.unit})`,
-              data: s.data.map((v) => parseFloat((v / s.critAt).toFixed(3))),
-              borderColor: s.color,
-              backgroundColor: s.color + '10',
-              fill: false,
-              tension: 0.4,
-              pointRadius: 0,
-              pointHoverRadius: 5,
-              pointHoverBackgroundColor: s.color,
-              pointHoverBorderColor: '#ffffff',
-              pointHoverBorderWidth: 2,
-              borderWidth: 1.5,
-            })),
-          }}
-          options={lineChartOptions(isDark, {
-            showLegend: true,
-            showXAxis: false,
-            labelFormatter: (l) => l,
-          })}
-        />
-      </ChartCard>
+        {(_w, _h, anim) => (
+          <Line
+            data={{
+              labels,
+              datasets: sensors.map((s) => ({
+                label: `${s.label} (${s.unit})`,
+                data: s.data.map((v) => parseFloat((v / s.critAt).toFixed(3))),
+                borderColor: s.color,
+                backgroundColor: s.color + '10',
+                fill: false,
+                tension: 0.4,
+                pointRadius: 0,
+                pointHoverRadius: 5,
+                pointHoverBackgroundColor: s.color,
+                pointHoverBorderColor: '#ffffff',
+                pointHoverBorderWidth: 2,
+                borderWidth: 1.5,
+              })),
+            }}
+            options={{ ...overlayOpts, ...anim }}
+          />
+        )}
+      </ScrollableChart>
 
       {/* Latest reading table */}
       <div className="card overflow-x-auto">

@@ -135,13 +135,13 @@ function FrameCard({ event, selected, onClick }: { event: VideoEvent; selected: 
       }}
     >
       {/* ── Image frame ── */}
-      <div className="relative overflow-hidden" style={{ height: 120 }}>
+      <div className="relative overflow-hidden" style={{ height: 96 }}>
         {imgSrc ? (
           <img
             src={imgSrc}
             alt={DEFECT_LABELS[event.defectType]}
             className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-105"
-            style={{ filter: 'brightness(0.88) contrast(1.05)' }}
+            style={{ filter: 'brightness(0.85) contrast(1.05)' }}
           />
         ) : (
           <div className="w-full h-full" style={{ background: color + '18' }} />
@@ -149,184 +149,68 @@ function FrameCard({ event, selected, onClick }: { event: VideoEvent; selected: 
 
         {/* Scanlines */}
         <div className="absolute inset-0 pointer-events-none"
-          style={{ backgroundImage: 'repeating-linear-gradient(0deg,transparent,transparent 3px,rgba(0,0,0,0.08) 3px,rgba(0,0,0,0.08) 6px)' }} />
+          style={{ backgroundImage: 'repeating-linear-gradient(0deg,transparent,transparent 3px,rgba(0,0,0,0.07) 3px,rgba(0,0,0,0.07) 6px)' }} />
 
         {/* Bbox */}
         <div className="absolute z-10 pointer-events-none"
           style={{ left, top, width, height, border: `1.5px solid ${color}`, boxShadow: `0 0 4px ${color}88` }}>
-          <span className="absolute -top-4 left-0 text-[8px] font-bold px-1 py-0.5 whitespace-nowrap"
+          <span className="absolute -top-4 left-0 text-[7px] font-bold px-1 py-0.5 whitespace-nowrap"
             style={{ background: color, color: '#fff', borderRadius: 2 }}>
             {DEFECT_LABELS[event.defectType]}
           </span>
         </div>
 
         {/* Severity pill — top right */}
-        <span className="absolute top-1.5 right-1.5 text-[9px] font-bold px-1.5 py-0.5 rounded-full uppercase z-10"
+        <span className="absolute top-1.5 right-1.5 text-[8px] font-bold px-1.5 py-0.5 rounded-full uppercase z-10"
           style={{ background: sevColor, color: '#fff' }}>
           {event.severity}
         </span>
 
         {/* Frame + time — bottom */}
-        <div className="absolute bottom-1.5 left-2 right-2 flex items-center justify-between z-10 pointer-events-none">
-          <span className="text-[8px] font-mono text-white/60">#{event.frameNumber}</span>
-          <span className="text-[8px] font-mono text-white/60">{fmtTime(event.timestamp)}</span>
+        <div className="absolute bottom-1 left-2 right-2 flex items-center justify-between z-10 pointer-events-none">
+          <span className="text-[7px] font-mono text-white/50">#{event.frameNumber}</span>
+          <span className="text-[7px] font-mono text-white/50">{fmtTime(event.timestamp)}</span>
         </div>
 
         {/* Hover overlay */}
         <div className="absolute inset-0 z-20 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity"
-          style={{ background: 'rgba(0,0,0,0.5)' }}>
-          <span className="flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-semibold text-white"
+          style={{ background: 'rgba(0,0,0,0.45)' }}>
+          <span className="flex items-center gap-1 px-2.5 py-1 rounded-full text-[11px] font-semibold text-white"
             style={{ background: color }}>
-            <Play size={10} fill="white" />Play
+            <Play size={9} fill="white" />Play
           </span>
         </div>
       </div>
 
       {/* ── Info row ── */}
-      <div className="px-3 py-2 space-y-1">
-        {/* Belt + date */}
-        <div className="flex items-center justify-between gap-2">
-          <span className="text-xs font-semibold text-primary truncate">{event.beltName}</span>
-          <span className="text-[10px] text-muted flex-shrink-0">{fmtDate(event.timestamp)}</span>
+      <div className="px-2.5 py-2 space-y-1.5">
+        {/* Belt name + date */}
+        <div className="flex items-center justify-between gap-1">
+          <span className="text-[11px] font-semibold text-primary truncate leading-tight">{event.beltName}</span>
+          <span className="text-[9px] text-muted flex-shrink-0">{fmtDate(event.timestamp)}</span>
         </div>
 
-        {/* Confidence + material */}
-        <div className="flex items-center gap-2">
-          <div className="flex-1 h-1 rounded-full overflow-hidden" style={{ backgroundColor: 'var(--color-border)' }}>
+        {/* Confidence bar + camera */}
+        <div className="flex items-center gap-1.5">
+          <div className="flex-1 h-0.5 rounded-full overflow-hidden" style={{ backgroundColor: 'var(--color-border)' }}>
             <div className="h-full rounded-full" style={{ width: `${event.confidence * 100}%`, backgroundColor: color }} />
           </div>
-          <span className="text-[10px] font-mono font-semibold flex-shrink-0" style={{ color }}>
+          <span className="text-[9px] font-mono font-bold flex-shrink-0" style={{ color }}>
             {Math.round(event.confidence * 100)}%
           </span>
-          <span className="text-[10px] text-muted flex-shrink-0">{event.camera}</span>
+          <span className="text-[9px] text-muted flex-shrink-0 font-mono">{event.camera}</span>
         </div>
 
-        {/* Location pills */}
-        <div className="flex items-center gap-1.5 flex-wrap">
-          <span className="text-[9px] px-1.5 py-0.5 rounded font-mono font-semibold"
-            style={{ background: color + '15', color }}>
-            {fromLeft.toFixed(1)} m
-          </span>
-          <span className="text-[9px] text-muted">from head ·</span>
-          <span className="text-[9px] px-1.5 py-0.5 rounded font-mono font-semibold"
-            style={{ background: color + '15', color }}>
-            {leftOff.toFixed(2)} m
-          </span>
-          <span className="text-[9px] text-muted">left edge ·</span>
-          <span className="text-[9px] px-1.5 py-0.5 rounded font-mono font-semibold"
-            style={{ background: color + '15', color }}>
-            {defW.toFixed(2)} m
-          </span>
-          <span className="text-[9px] text-muted">wide</span>
+        {/* Location — single compact line */}
+        <div className="flex items-center gap-1 text-[9px] font-mono">
+          <span className="font-semibold" style={{ color }}>{fromLeft.toFixed(1)}m</span>
+          <span className="text-muted">·</span>
+          <span className="text-muted">L</span>
+          <span className="font-semibold" style={{ color }}>{leftOff.toFixed(2)}m</span>
+          <span className="text-muted">·</span>
+          <span className="text-muted">W</span>
+          <span className="font-semibold" style={{ color }}>{defW.toFixed(2)}m</span>
         </div>
-      </div>
-    </motion.div>
-  );
-}
-
-function VideoPlayerPanel({ event, videoRef, videoPlaying, setVideoPlaying, onClose }: { event: VideoEvent; videoRef: React.RefObject<HTMLVideoElement>; videoPlaying: boolean; setVideoPlaying: (v:boolean)=>void; onClose: ()=>void }) {
-  const color = DEFECT_COLORS[event.defectType];
-  const sevColor = SEV_COLORS[event.severity];
-  const togglePlay = () => { if (!videoRef.current) return; if (videoPlaying) { videoRef.current.pause(); setVideoPlaying(false); } else { videoRef.current.play(); setVideoPlaying(true); } };
-  const restart = () => { if (!videoRef.current) return; videoRef.current.currentTime = event.videoTimestamp; videoRef.current.play(); setVideoPlaying(true); };
-  return (
-    <motion.div initial={{ opacity:0,x:20 }} animate={{ opacity:1,x:0 }} exit={{ opacity:0,x:20 }}
-      className="sticky top-4 rounded-2xl overflow-hidden"
-      style={{ backgroundColor:"var(--color-panel)", border:`1px solid ${color}55`, boxShadow:`0 0 24px ${color}22` }}>
-      <div className="flex items-center justify-between px-4 py-3" style={{ borderBottom:"1px solid var(--color-border)" }}>
-        <div className="flex items-center gap-2">
-          <Video size={15} style={{ color }}/>
-          <span className="text-sm font-bold text-primary">Live Playback</span>
-          <span className="text-[10px] px-2 py-0.5 rounded-full font-bold uppercase" style={{ background:color+"22",color }}>{event.camera}</span>
-        </div>
-        <button onClick={onClose} className="flex items-center gap-1 text-xs text-muted hover:text-primary transition-colors px-2 py-1 rounded-lg hover:bg-black/5 dark:hover:bg-white/5"><X size={13}/>Close</button>
-      </div>
-      <div className="relative bg-black" style={{ aspectRatio:"16/9" }}>
-        <video ref={videoRef} src={frontViewVideo} className="w-full h-full object-cover" loop muted playsInline/>
-        <div className="absolute inset-0 pointer-events-none" style={{ backgroundImage:"repeating-linear-gradient(0deg,transparent,transparent 2px,rgba(0,0,0,0.08) 2px,rgba(0,0,0,0.08) 4px)" }}/>
-        <div className="absolute inset-0 pointer-events-none" style={{ background:"radial-gradient(ellipse at center,transparent 55%,rgba(0,0,0,0.55) 100%)" }}/>
-        <div className="absolute top-2.5 left-3 flex items-center gap-1.5 z-10">
-          <motion.div animate={{ opacity:[1,0.2,1] }} transition={{ duration:1.2,repeat:Infinity }} className="w-2 h-2 rounded-full bg-red-500"/>
-          <span className="text-[10px] font-bold text-white/80 tracking-widest">REC</span>
-        </div>
-        <div className="absolute top-2.5 right-3 z-10"><span className="text-[10px] font-mono text-white/60">{event.camera}</span></div>
-        <div className="absolute bottom-2.5 left-3 z-10"><span className="text-[10px] font-mono text-white/60">{new Date(event.timestamp).toLocaleString()}</span></div>
-        <div className="absolute bottom-2.5 right-3 z-10"><span className="text-[10px] font-bold px-2 py-0.5 rounded-full uppercase" style={{ background:color+"cc",color:"#fff" }}>{DEFECT_LABELS[event.defectType]}</span></div>
-      </div>
-      <div className="flex items-center gap-3 px-4 py-2.5" style={{ borderBottom:"1px solid var(--color-border)" }}>
-        <button onClick={restart} className="p-1.5 rounded-lg transition-colors hover:bg-black/5 dark:hover:bg-white/5 text-muted hover:text-primary" title="Jump to event timestamp"><SkipBack size={15}/></button>
-        <button onClick={togglePlay} className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold text-white" style={{ background:`linear-gradient(135deg,${color},${color}bb)` }}>
-          {videoPlaying?<Pause size={13} fill="white"/>:<Play size={13} fill="white"/>}{videoPlaying?"Pause":"Play"}
-        </button>
-        <span className="text-[10px] font-mono text-muted ml-auto">t={event.videoTimestamp.toFixed(2)}s</span>
-      </div>
-      <div className="px-4 py-3 space-y-2.5">
-        <p className="text-xs font-bold text-muted uppercase tracking-wide">Event Details</p>
-        <div className="grid grid-cols-2 gap-2">
-          {[{label:"Belt",value:event.beltName},{label:"Material",value:event.material},{label:"Defect",value:DEFECT_LABELS[event.defectType]},{label:"Severity",value:event.severity,color:sevColor},{label:"Confidence",value:`${Math.round(event.confidence*100)}%`},{label:"Frame",value:`#${event.frameNumber}`},{label:"Belt Pos",value:`${event.beltPosition}%`},{label:"Camera",value:event.camera}].map(({label,value,color:c})=>(
-            <div key={label} className="rounded-lg px-2.5 py-2" style={{ backgroundColor:"var(--color-surface)" }}>
-              <p className="text-[10px] text-muted mb-0.5">{label}</p>
-              <p className="text-xs font-semibold" style={{ color:c??"var(--text-primary)" }}>{value}</p>
-            </div>
-          ))}
-        </div>
-        <div className="rounded-lg px-2.5 py-2" style={{ backgroundColor:"var(--color-surface)" }}>
-          <p className="text-[10px] text-muted mb-0.5">Bounding Box</p>
-          <p className="text-[10px] font-mono text-secondary">x={event.bbox[0]} y={event.bbox[1]} w={event.bbox[2]} h={event.bbox[3]}</p>
-        </div>
-        <div className="rounded-lg px-2.5 py-2" style={{ backgroundColor:"var(--color-surface)" }}>
-          <p className="text-[10px] text-muted mb-0.5">Captured At</p>
-          <p className="text-xs font-mono text-secondary">{new Date(event.timestamp).toLocaleString()}</p>
-        </div>
-
-        {/* ── Physical location measurement ── */}
-        {(() => {
-          const BELT_LEN = 100;
-          const BELT_W   = 1.2;
-          const fromLeft  = (event.beltPosition / 100) * BELT_LEN;
-          const fromRight = BELT_LEN - fromLeft;
-          const yNorm     = event.bbox[1] / 720;
-          const wNorm     = event.bbox[3] / 720;
-          const leftOff   = Math.min(yNorm * BELT_W, BELT_W);
-          const defW      = Math.max(0.01, wNorm * BELT_W);
-          const rightOff  = Math.max(0, BELT_W - leftOff - defW);
-          return (
-            <div className="rounded-xl p-3 space-y-2" style={{ background: color + "0d", border: `1px solid ${color}44` }}>
-              <p className="text-[10px] font-bold uppercase tracking-wider flex items-center gap-1.5" style={{ color }}>
-                <svg width="12" height="12" viewBox="0 0 12 12" fill="none">
-                  <circle cx="6" cy="6" r="5" stroke={color} strokeWidth="1.2"/>
-                  <path d="M6 3v3l2 1" stroke={color} strokeWidth="1.2" strokeLinecap="round"/>
-                </svg>
-                Exact Physical Location
-              </p>
-              <div className="grid grid-cols-2 gap-1.5">
-                <div className="rounded-lg px-2.5 py-2" style={{ backgroundColor:"var(--color-surface)" }}>
-                  <p className="text-[9px] text-muted">← From Head End</p>
-                  <p className="text-sm font-mono font-bold" style={{ color }}>{fromLeft.toFixed(1)} m</p>
-                </div>
-                <div className="rounded-lg px-2.5 py-2" style={{ backgroundColor:"var(--color-surface)" }}>
-                  <p className="text-[9px] text-muted">From Tail End →</p>
-                  <p className="text-sm font-mono font-bold" style={{ color }}>{fromRight.toFixed(1)} m</p>
-                </div>
-                <div className="rounded-lg px-2.5 py-2" style={{ backgroundColor:"var(--color-surface)" }}>
-                  <p className="text-[9px] text-muted">← Left Edge</p>
-                  <p className="text-sm font-mono font-bold" style={{ color }}>{leftOff.toFixed(2)} m</p>
-                </div>
-                <div className="rounded-lg px-2.5 py-2" style={{ backgroundColor:"var(--color-surface)" }}>
-                  <p className="text-[9px] text-muted">Right Edge →</p>
-                  <p className="text-sm font-mono font-bold" style={{ color }}>{rightOff.toFixed(2)} m</p>
-                </div>
-              </div>
-              <div className="rounded-lg px-2.5 py-2" style={{ backgroundColor:"var(--color-surface)" }}>
-                <p className="text-[9px] text-muted mb-0.5">Defect Span</p>
-                <p className="text-xs font-mono font-bold" style={{ color }}>{defW.toFixed(2)} m wide · {(Math.max(0.01, event.bbox[2] / 1280 * BELT_LEN * 0.05)).toFixed(2)} m along belt</p>
-              </div>
-              <p className="text-[9px] text-muted text-center pt-0.5">
-                Walk to <span className="font-bold" style={{ color }}>{fromLeft.toFixed(1)} m</span> from head pulley, <span className="font-bold" style={{ color }}>{leftOff.toFixed(2)} m</span> from left edge
-              </p>
-            </div>
-          );
-        })()}
       </div>
     </motion.div>
   );
@@ -999,7 +883,7 @@ export default function VideoAnalyticsPage() {
           </div>
         </motion.div>
       ) : searched && results.length > 0 ? (
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+        <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-3">
           <AnimatePresence>
             {results.map((ev)=>(
               <FrameCard key={ev.id} event={ev} selected={selectedEvent?.id===ev.id}

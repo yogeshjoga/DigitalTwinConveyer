@@ -56,6 +56,10 @@ export const useSensorHistory = (minutes = 30) =>
     queryKey: ['sensors', 'history', minutes],
     queryFn: () =>
       apiClient.get(`/sensors/history?minutes=${minutes}`).then((r) => r.data),
+    // Match the backend simulator interval (2 s) for lowest latency.
+    // The buffer deduplicates by timestamp so re-fetching is safe.
+    refetchInterval: 2000,
+    staleTime: 0,
   });
 
 // ─── Load Analysis ────────────────────────────────────────────────────────────
@@ -63,7 +67,8 @@ export const useLoadAnalysis = () =>
   useQuery<LoadAnalysis>({
     queryKey: ['load', 'live'],
     queryFn: () => apiClient.get('/load/live').then((r) => r.data),
-    refetchInterval: 3000,
+    refetchInterval: 2000,
+    staleTime: 0,
   });
 
 // ─── Thermal ──────────────────────────────────────────────────────────────────

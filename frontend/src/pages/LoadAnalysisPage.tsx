@@ -9,12 +9,15 @@ import {
   Tooltip,
   Legend,
 } from 'chart.js';
+import type { ChartOptions } from 'chart.js';
 import { Bar, Line } from 'react-chartjs-2';
 import { useLoadAnalysis, useSensorHistory } from '@/api/hooks';
 import StatCard from '@/components/ui/StatCard';
+import ScrollableChart from '@/components/ui/ScrollableChart';
 import { Zap, Droplets, TrendingUp } from 'lucide-react';
 import { useBeltStore } from '@/store/useBeltStore';
-import { lineChartOptions, barChartOptions } from '@/lib/chartConfig';
+import { getThemeColors } from '@/lib/chartConfig';
+import { useMultiSeriesBuffer } from '@/lib/useTimeSeriesBuffer';
 
 ChartJS.register(CategoryScale, LinearScale, BarElement, PointElement, LineElement, Filler, Tooltip, Legend);
 
@@ -24,68 +27,117 @@ export default function LoadAnalysisPage() {
   const theme             = useBeltStore((s) => s.theme);
   const isDark            = theme === 'dark';
 
-  // Real timestamps as labels
-  const timeLabels = history?.map((r) =>
-    new Date(r.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' })
-  ) ?? [];
+  // Accumulate history into a sliding-window buffer
+  const buf = useMultiSeriesBuffer(
+    'load-analysis',
+    history,
+    ['udl', 'loadCell', 'impactForce'],
+    2000,
+  );
 
-  const udlData = {
-    labels: timeLabels,
-    datasets: [{
-      label: 'UDL',
-      data: history?.map((r) => r.udl) ?? [],
-      borderColor: '#27a372',
-      backgroundColor: 'rgba(39,163,114,0.15)',
-      fill: true,
-      tension: 0.4,
-      pointRadius: 0,
-      pointHoverRadius: 5,
-      pointHoverBackgroundColor: '#27a372',
-      pointHoverBorderColor: '#ffffff',
-      pointHoverBorderWidth: 2,
-      borderWidth: 2,
-    }],
+  const { labels, series } = buf;
+  const udlValues         = series['udl']        ?? [];
+  const loadCellValues    = series['loadCell']    ?? [];
+  const impactForceValues = series['impactForce'] ?? [];
+
+  const colors = getThemeColors(isDark);
+
+  // Shared chart options — responsive:true so Chart.js fills the container div
+  const baseOpts = {
+    responsive: true,
+    maintainAspectRatio: false,
+    animation: false as const,
+    interaction: { mode: 'index' as const, intersect: false },
   };
 
-  const loadCellData = {
-    labels: timeLabels,
-    datasets: [{
-      label: 'Load Cell',
-      data: history?.map((r) => r.loadCell) ?? [],
-      backgroundColor: '#3b82f6',
-      hoverBackgroundColor: '#60a5fa',
-      borderRadius: 4,
-      borderSkipped: false,
-    }],
-  };
-
-  // Also show impact force on load cell chart as a second dataset
-  const impactData = {
-    labels: timeLabels,
-    datasets: [
-      {
-        label: 'Load Cell',
-        data: history?.map((r) => r.loadCell) ?? [],
-        backgroundColor: '#3b82f688',
-        hoverBackgroundColor: '#3b82f6',
-        borderRadius: 4,
-        borderSkipped: false,
+  const udlLineOpts: ChartOptions<'line'> = {
+    ...baseOpts,
+    plugins: {
+      legend: { display: false },
+      tooltip: {
+        enabled: true,
+        mode: 'index',
+        intersect: false,
+        backgroundColor: colors.tooltip.bg,
+        borderColor: colors.tooltip.border,
+        borderWidth: 1,
+        titleColor: colors.tooltip.title,
+        bodyColor: colors.tooltip.body,
+        titleFont: { size: 11, weight: 'bold', family: 'Inter, sans-serif' },
+        bodyFont: { size: 11, family: 'Inter, sans-serif' },
+        padding: { x: 12, y: 8 },
+        cornerRadius: 8,
+        callbacks: {
+          title: (items) => items[0]?.label ?? '',
+          label: (ctx) => `  UDL: ${typeof ctx.parsed.y === 'number' ? ctx.parsed.y.toFixed(2) : ctx.parsed.y} kg/m`,
+        },
       },
-      {
-        label: 'Impact Force',
-        data: history?.map((r) => r.impactForce * 10) ?? [], // scale kN→kg for same axis
-        backgroundColor: '#f59e0b88',
-        hoverBackgroundColor: '#f59e0b',
-        borderRadius: 4,
-        borderSkipped: false,
+    },
+    scales: {
+      x: {
+        display: true,
+        grid: { color: colors.grid },
+        ticks: {
+          color: colors.tick,
+          font: { size: 9 },
+          maxRotation: 0,
+          callback: (_val, idx) => idx % 30 === 0 ? labels[idx] : '',
+        },
       },
-    ],
+      y: {
+        grid: { color: colors.grid },
+        ticks: { color: colors.tick, font: { size: 10 } },
+      },
+    },
+    elements: {
+      point: { radius: 0, hoverRadius: 5, hoverBorderWidth: 2, hoverBackgroundColor: '#ffffff' },
+      line:  { borderWidth: 2 },
+    },
   };
 
-  const udlOpts   = lineChartOptions(isDark, { unit: 'kg/m', showLegend: false, showXAxis: false });
-  const loadOpts  = barChartOptions(isDark,  { unit: 'kg',   showLegend: true,
-    labelFormatter: (l) => l,
-  });
+  const impactBarOpts: ChartOptions<'bar'> = {
+    ...baseOpts,
+    plugins: {
+      legend: {
+        display: true,
+        labels: { color: colors.tick, font: { size: 11 }, boxWidth: 12, padding: 16 },
+      },
+      tooltip: {
+        enabled: true,
+        mode: 'index',
+        intersect: false,
+        backgroundColor: colors.tooltip.bg,
+        borderColor: colors.tooltip.border,
+        borderWidth: 1,
+        titleColor: colors.tooltip.title,
+        bodyColor: colors.tooltip.body,
+        titleFont: { size: 11, weight: 'bold', family: 'Inter, sans-serif' },
+        bodyFont: { size: 11, family: 'Inter, sans-serif' },
+        padding: { x: 12, y: 8 },
+        cornerRadius: 8,
+        callbacks: {
+          title: (items) => items[0]?.label ?? '',
+          label: (ctx) => `  ${ctx.dataset.label}: ${typeof ctx.parsed.y === 'number' ? ctx.parsed.y.toFixed(1) : ctx.parsed.y} kg`,
+        },
+      },
+    },
+    scales: {
+      x: {
+        display: true,
+        grid: { color: colors.grid },
+        ticks: {
+          color: colors.tick,
+          font: { size: 9 },
+          maxRotation: 0,
+          callback: (_val, idx) => idx % 30 === 0 ? labels[idx] : '',
+        },
+      },
+      y: {
+        grid: { color: colors.grid },
+        ticks: { color: colors.tick, font: { size: 10 } },
+      },
+    },
+  };
 
   const impactVelocity = load ? Math.sqrt(2 * 9.81 * load.dropHeight).toFixed(2) : '—';
 
@@ -117,21 +169,75 @@ export default function LoadAnalysisPage() {
         </div>
       </div>
 
+      {/* UDL + Load Cell — 2-column grid */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        <div className="card">
-          <h2 className="text-sm font-semibold text-secondary mb-1">UDL Trend (60 min)</h2>
-          <p className="text-xs text-muted mb-3">Hover to see UDL at each timestamp</p>
-          <div className="h-56">
-            <Line data={udlData} options={udlOpts} />
-          </div>
-        </div>
-        <div className="card">
-          <h2 className="text-sm font-semibold text-secondary mb-1">Load Cell vs Impact Force</h2>
-          <p className="text-xs text-muted mb-3">Hover bars to compare load cell (kg) and impact force (×10 kN)</p>
-          <div className="h-56">
-            <Bar data={impactData} options={loadOpts} />
-          </div>
-        </div>
+        {/* UDL sliding-window chart */}
+        <ScrollableChart
+          title="UDL Trend"
+          subtitle="UDL (kg/m) — scroll ← for history · zoom ± for density"
+          pointCount={labels.length}
+          height={220}
+          accentColor="#27a372"
+        >
+          {(_w, _h, anim) => (
+            <Line
+              data={{
+                labels,
+                datasets: [{
+                  label: 'UDL',
+                  data: udlValues,
+                  borderColor: '#27a372',
+                  backgroundColor: '#27a37222',
+                  fill: true,
+                  tension: 0.4,
+                  pointRadius: 0,
+                  pointHoverRadius: 5,
+                  pointHoverBackgroundColor: '#27a372',
+                  pointHoverBorderColor: '#ffffff',
+                  pointHoverBorderWidth: 2,
+                  borderWidth: 2,
+                }],
+              }}
+              options={{ ...udlLineOpts, ...anim }}
+            />
+          )}
+        </ScrollableChart>
+
+        {/* Load Cell vs Impact Force sliding-window chart */}
+        <ScrollableChart
+          title="Load Cell vs Impact Force"
+          subtitle="Scroll ← for history · hover to compare load cell (kg) and impact force (×10 kN)"
+          pointCount={labels.length}
+          height={220}
+          accentColor="#3b82f6"
+        >
+          {(_w, _h, anim) => (
+            <Bar
+              data={{
+                labels,
+                datasets: [
+                  {
+                    label: 'Load Cell (kg)',
+                    data: loadCellValues,
+                    backgroundColor: '#3b82f688',
+                    hoverBackgroundColor: '#3b82f6',
+                    borderRadius: 2,
+                    borderSkipped: false,
+                  },
+                  {
+                    label: 'Impact Force (×10 kN)',
+                    data: impactForceValues.map((v) => v * 10),
+                    backgroundColor: '#f59e0b88',
+                    hoverBackgroundColor: '#f59e0b',
+                    borderRadius: 2,
+                    borderSkipped: false,
+                  },
+                ],
+              }}
+              options={{ ...impactBarOpts, ...anim }}
+            />
+          )}
+        </ScrollableChart>
       </div>
 
       <div className="card">

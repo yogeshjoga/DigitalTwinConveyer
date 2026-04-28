@@ -5,6 +5,7 @@ import StatCard from '@/components/ui/StatCard';
 import GaugeChart from '@/components/ui/GaugeChart';
 import RiskBar from '@/components/ui/RiskBar';
 import AlertBadge from '@/components/ui/AlertBadge';
+import ScrollableChart from '@/components/ui/ScrollableChart';
 import { exportPDF, exportExcel, type ReportData } from '@/lib/exportReport';
 import {
   useDashboardSummary,
@@ -23,9 +24,11 @@ import {
   Tooltip,
   Legend,
 } from 'chart.js';
+import type { ChartOptions } from 'chart.js';
 import { Line } from 'react-chartjs-2';
 import { useBeltStore } from '@/store/useBeltStore';
-import { lineChartOptions } from '@/lib/chartConfig';
+import { getThemeColors } from '@/lib/chartConfig';
+import { useTimeSeriesBuffer } from '@/lib/useTimeSeriesBuffer';
 import type { BeltEntry } from '@/data/beltCatalog';
 
 ChartJS.register(CategoryScale, LinearScale, PointElement, LineElement, Filler, Tooltip, Legend);
@@ -198,36 +201,64 @@ export default function DashboardPage() {
     alerts: alerts ?? [],
   });
 
-  const timeLabels = history?.map((r) =>
-    new Date(r.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' })
-  ) ?? [];
+  // ── Accumulate UDL into a sliding-window buffer (keyed by belt so each
+  //    belt gets its own independent history when the user switches belts)
+  const udlBuf = useTimeSeriesBuffer(
+    `dashboard-udl-${selectedBelt.id}`,
+    history,
+    'udl',
+    2000,
+  );
 
-  const loadChartData = {
-    labels: timeLabels,
-    datasets: [
-      {
-        label: 'UDL',
-        data: history?.map((r) => r.udl) ?? [],
-        borderColor: selectedBelt.color,
-        backgroundColor: selectedBelt.color + '18',
-        fill: true,
-        tension: 0.4,
-        pointRadius: 0,
-        pointHoverRadius: 5,
-        pointHoverBackgroundColor: selectedBelt.color,
-        pointHoverBorderColor: '#ffffff',
-        pointHoverBorderWidth: 2,
-        borderWidth: 2,
+  const colors = getThemeColors(isDark);
+
+  const udlLineOpts: ChartOptions<'line'> = {
+    responsive: true,
+    maintainAspectRatio: false,
+    animation: false,
+    interaction: { mode: 'index', intersect: false },
+    plugins: {
+      legend: { display: false },
+      tooltip: {
+        enabled: true,
+        mode: 'index',
+        intersect: false,
+        backgroundColor: colors.tooltip.bg,
+        borderColor: colors.tooltip.border,
+        borderWidth: 1,
+        titleColor: colors.tooltip.title,
+        bodyColor: colors.tooltip.body,
+        titleFont: { size: 11, weight: 'bold', family: 'Inter, sans-serif' },
+        bodyFont: { size: 11, family: 'Inter, sans-serif' },
+        padding: { x: 12, y: 8 },
+        cornerRadius: 8,
+        callbacks: {
+          title: (items) => items[0]?.label ?? '',
+          label: (ctx) => `  UDL: ${typeof ctx.parsed.y === 'number' ? ctx.parsed.y.toFixed(2) : ctx.parsed.y} kg/m`,
+        },
       },
-    ],
+    },
+    scales: {
+      x: {
+        display: true,
+        grid: { color: colors.grid },
+        ticks: {
+          color: colors.tick,
+          font: { size: 9 },
+          maxRotation: 0,
+          callback: (_val, idx) => idx % 30 === 0 ? udlBuf.labels[idx] : '',
+        },
+      },
+      y: {
+        grid: { color: colors.grid },
+        ticks: { color: colors.tick, font: { size: 10 } },
+      },
+    },
+    elements: {
+      point: { radius: 0, hoverRadius: 5, hoverBorderWidth: 2, hoverBackgroundColor: '#ffffff' },
+      line:  { borderWidth: 2 },
+    },
   };
-
-  const chartOptions = lineChartOptions(isDark, {
-    unit: 'kg/m',
-    showLegend: false,
-    showXAxis: false,
-    labelFormatter: (label) => label,
-  });
 
   return (
     <div className="space-y-6">
@@ -303,17 +334,45 @@ export default function DashboardPage() {
 
       {/* Main grid */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        <div className="lg:col-span-2 card">
-          <div className="flex items-center justify-between mb-1">
-            <h2 className="text-sm font-semibold text-secondary">Load Trend (30 min)</h2>
-            <span className="text-xs font-medium px-2 py-0.5 rounded-full" style={{ background: selectedBelt.color + '18', color: selectedBelt.color }}>
-              {selectedBelt.name}
-            </span>
-          </div>
-          <p className="text-xs text-muted mb-4">UDL (kg/m) — hover to see values</p>
-          <div className="h-48">
-            <Line data={loadChartData} options={chartOptions} />
-          </div>
+        <div className="lg:col-span-2">
+          <ScrollableChart
+            title="Load Trend"
+            subtitle="UDL (kg/m) — scroll ← for history · auto-scrolls to latest"
+            pointCount={udlBuf.labels.length}
+            height={192}
+            accentColor={selectedBelt.color}
+            badge={
+              <span
+                className="text-xs font-medium px-2 py-0.5 rounded-full"
+                style={{ background: selectedBelt.color + '18', color: selectedBelt.color }}
+              >
+                {selectedBelt.name}
+              </span>
+            }
+          >
+            {(_w, _h, anim) => (
+              <Line
+                data={{
+                  labels: udlBuf.labels,
+                  datasets: [{
+                    label: 'UDL',
+                    data: udlBuf.values,
+                    borderColor: selectedBelt.color,
+                    backgroundColor: selectedBelt.color + '18',
+                    fill: true,
+                    tension: 0.4,
+                    pointRadius: 0,
+                    pointHoverRadius: 5,
+                    pointHoverBackgroundColor: selectedBelt.color,
+                    pointHoverBorderColor: '#ffffff',
+                    pointHoverBorderWidth: 2,
+                    borderWidth: 2,
+                  }],
+                }}
+                options={{ ...udlLineOpts, ...anim }}
+              />
+            )}
+          </ScrollableChart>
         </div>
 
         <div className="card flex flex-col items-center justify-around gap-4">
