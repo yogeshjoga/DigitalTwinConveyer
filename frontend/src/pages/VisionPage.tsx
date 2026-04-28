@@ -1,14 +1,15 @@
 import { useState, useRef, useEffect } from 'react';
-import { useVisionDetections } from '@/api/hooks';
-import { useLocation } from 'react-router-dom';
+import { useVisionDetections, usePLCCommand } from '@/api/hooks';
+import { useLocation, useNavigate } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import type { DefectType, VisionDetection } from '@/types';
 import {
   Scissors, Circle, AlignLeft, Layers,
   LayoutGrid, CheckCircle2, ZoomIn, X,
-  VolumeX, Wifi,
+  VolumeX, Wifi, AlertOctagon, ClipboardList,
 } from 'lucide-react';
 import DetectionDetailModal from '@/components/vision/DetectionDetailModal';
+import { useBeltStore } from '@/store/useBeltStore';
 
 // ── Import all defect images ───────────────────────────────────────────────────
 // Tears
@@ -308,6 +309,19 @@ export default function VisionPage() {
   const [lightbox, setLightbox]             = useState<{ src: string; alt: string } | null>(null);
   const [videoLightbox, setVideoLightbox]   = useState<{ label: string; angle: string; color: string; videoMode: 'full' | 'left' | 'right' } | null>(null);
   const [selectedDetection, setSelectedDetection] = useState<VisionDetection | null>(null);
+  const [stoppedFor, setStoppedFor]         = useState<string | null>(null);
+
+  const setPLCRunning = useBeltStore((s) => s.setPLCRunning);
+  const plcRunning    = useBeltStore((s) => s.plcBeltRunning);
+  const sendCmd       = usePLCCommand();
+  const navigate      = useNavigate();
+
+  const handleEStop = (detection: VisionDetection) => {
+    const reason = `Vision: ${DEFECT_META[detection.defectType].label} detected (${Math.round(detection.confidence * 100)}% confidence)`;
+    sendCmd.mutate({ command: 'E_STOP', operator: 'Vision System', reason });
+    setPLCRunning(false, reason);
+    setStoppedFor(detection.id);
+  };
 
   // Auto-open modal when navigated from Digital Twin with a detection id
   const location = useLocation();
@@ -625,12 +639,32 @@ export default function VisionPage() {
                         );
                       })()}
 
-                      <div className="mt-2 pt-2 border-t flex items-center justify-between" style={{ borderColor: 'var(--color-border)' }}>
-                        <span className="text-[10px] text-muted font-mono">{d.id}</span>
-                        <span className="text-[10px] px-1.5 py-0.5 rounded font-medium"
-                          style={{ background: meta.color + '18', color: meta.color }}>
-                          {meta.label}
-                        </span>
+                      <div className="mt-2 pt-2 border-t flex items-center justify-between gap-2" style={{ borderColor: 'var(--color-border)' }}>
+                        <span className="text-[10px] text-muted font-mono truncate">{d.id}</span>
+                        <div className="flex items-center gap-1.5 flex-shrink-0">
+                          {/* E-Stop button — only for high/medium severity */}
+                          {(d.severity === 'high' || d.severity === 'medium') && (
+                            <button
+                              onClick={(e) => { e.stopPropagation(); handleEStop(d); }}
+                              disabled={!plcRunning}
+                              title={plcRunning ? 'Emergency stop belt due to this defect' : 'Belt already stopped'}
+                              className="flex items-center gap-1 px-2 py-1 rounded-lg text-[10px] font-bold text-white transition-all disabled:opacity-40"
+                              style={{ background: d.severity === 'high' ? '#ef4444' : '#f59e0b' }}
+                            >
+                              <AlertOctagon size={10} />
+                              {stoppedFor === d.id ? 'STOPPED' : 'E-STOP'}
+                            </button>
+                          )}
+                          {/* Assign worker — always visible */}
+                          <button
+                            onClick={(e) => { e.stopPropagation(); navigate('/work-orders'); }}
+                            className="flex items-center gap-1 px-2 py-1 rounded-lg text-[10px] font-semibold transition-all"
+                            style={{ backgroundColor: 'var(--color-surface)', border: '1px solid var(--color-border)', color: 'var(--text-secondary)' }}
+                          >
+                            <ClipboardList size={10} />
+                            Assign
+                          </button>
+                        </div>
                       </div>
                     </div>
                   </motion.div>

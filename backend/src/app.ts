@@ -10,6 +10,7 @@ import loadRouter      from './routes/load';
 import thermalRouter   from './routes/thermal';
 import visionRouter    from './routes/vision';
 import alertsRouter    from './routes/alerts';
+import plcRouter       from './routes/plc';
 
 const app = express();
 
@@ -47,6 +48,7 @@ app.use('/api/load',      loadRouter);
 app.use('/api/thermal',   thermalRouter);
 app.use('/api/vision',    visionRouter);
 app.use('/api/alerts',    alertsRouter);
+app.use('/api/plc',       plcRouter);
 
 // ── Health check ──────────────────────────────────────────────────────────────
 app.get('/health', (_req, res) => res.json({ status: 'ok', ts: new Date().toISOString() }));

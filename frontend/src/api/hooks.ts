@@ -9,6 +9,10 @@ import type {
   MLPrediction,
   Alert,
   DashboardSummary,
+  PLCState,
+  PLCCommand,
+  PLCAutoRule,
+  PLCNotification,
 } from '@/types';
 
 // ─── Dashboard ────────────────────────────────────────────────────────────────
@@ -86,6 +90,17 @@ export const useVisionDetections = () =>
     queryFn: () => apiClient.get('/vision/detections').then((r) => r.data),
     refetchInterval: 5000,
   });
+
+export const useClearDefects = () => {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: () => apiClient.delete('/vision/detections').then((r) => r.data),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ['vision'] });
+      qc.invalidateQueries({ queryKey: ['alerts'] });
+    },
+  });
+};
 
 // ─── ML Prediction ────────────────────────────────────────────────────────────
 // The ML service returns snake_case — transform to camelCase here.
@@ -199,3 +214,100 @@ export const useAIChat = () =>
       context?: Record<string, unknown>;
     }) => mlClient.post('/chat', payload).then((r) => r.data),
   });
+
+// ─── PLC / HMI ────────────────────────────────────────────────────────────────
+import type { PLCState, PLCCommand, PLCAutoRule } from '@/types';
+
+export const usePLCState = () =>
+  useQuery<PLCState>({
+    queryKey: ['plc', 'state'],
+    queryFn: () => apiClient.get('/plc/state').then((r) => r.data),
+    refetchInterval: 1000,
+    staleTime: 0,
+  });
+
+export const usePLCCommands = () =>
+  useQuery<PLCCommand[]>({
+    queryKey: ['plc', 'commands'],
+    queryFn: () => apiClient.get('/plc/commands').then((r) => r.data),
+    refetchInterval: 2000,
+  });
+
+export const usePLCAutoRules = () =>
+  useQuery<PLCAutoRule[]>({
+    queryKey: ['plc', 'auto-rules'],
+    queryFn: () => apiClient.get('/plc/auto-rules').then((r) => r.data),
+    refetchInterval: 5000,
+  });
+
+export const usePLCCommand = () => {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (payload: {
+      command: string;
+      value?: number;
+      operator?: string;
+      reason?: string;
+    }) => apiClient.post('/plc/command', payload).then((r) => r.data),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ['plc'] });
+    },
+  });
+};
+
+export const useToggleAutoRule = () => {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: ({ id, enabled }: { id: string; enabled: boolean }) =>
+      apiClient.patch(`/plc/auto-rules/${id}`, { enabled }).then((r) => r.data),
+    onSuccess: () => qc.invalidateQueries({ queryKey: ['plc', 'auto-rules'] }),
+  });
+};
+
+export const useUpdateAutoRule = () => {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (payload: { id: string; threshold?: number; reduceSpeedTo?: number; cooldownSeconds?: number; triggerAction?: string }) => {
+      const { id, ...rest } = payload;
+      return apiClient.patch(`/plc/auto-rules/${id}`, rest).then((r) => r.data);
+    },
+    onSuccess: () => qc.invalidateQueries({ queryKey: ['plc', 'auto-rules'] }),
+  });
+};
+
+export const usePLCNotifications = () =>
+  useQuery<PLCNotification[]>({
+    queryKey: ['plc', 'notifications'],
+    queryFn: () => apiClient.get('/plc/notifications').then((r) => r.data),
+    refetchInterval: 1500,
+    staleTime: 0,
+  });
+
+export const useMarkNotificationsRead = () => {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: () => apiClient.patch('/plc/notifications/read-all').then((r) => r.data),
+    onSuccess: () => qc.invalidateQueries({ queryKey: ['plc', 'notifications'] }),
+  });
+};
+
+export const useClearGateByTicket = () => {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (payload: { ticketRef?: string; resolvedBy?: string }) =>
+      apiClient.post('/plc/clear-gate/ticket', payload).then((r) => r.data),
+    onSuccess: () => qc.invalidateQueries({ queryKey: ['plc'] }),
+  });
+};
+
+export const useClearGateByDefects = () => {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: () => apiClient.post('/plc/clear-gate/defects').then((r) => r.data),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ['plc'] });
+      qc.invalidateQueries({ queryKey: ['vision'] });
+      qc.invalidateQueries({ queryKey: ['alerts'] });
+    },
+  });
+};

@@ -3,6 +3,24 @@ import Sidebar from './Sidebar';
 import Topbar from './Topbar';
 import { useBeltStore } from '@/store/useBeltStore';
 import AIChatPanel from '@/components/ai/AIChatPanel';
+import PLCNotificationToast from '@/components/ui/PLCNotificationToast';
+import { usePLCState } from '@/api/hooks';
+import { useEffect } from 'react';
+
+/** Syncs backend PLC state → global Zustand store on every poll (1 s).
+ *  Mounted in Layout so it runs on every page — not just PLCPage. */
+function PLCStateSync() {
+  const { data: plc } = usePLCState();
+  const setPLCRunning = useBeltStore((s) => s.setPLCRunning);
+
+  useEffect(() => {
+    if (!plc) return;
+    const running = plc.beltState === 'running' || plc.beltState === 'starting';
+    setPLCRunning(running, running ? undefined : `PLC: ${plc.beltState}${plc.autoStopReason ? ' — ' + plc.autoStopReason : ''}`);
+  }, [plc?.beltState, plc?.autoStopReason]);
+
+  return null;
+}
 
 export default function Layout() {
   const sidebarOpen = useBeltStore((s) => s.sidebarOpen);
@@ -23,8 +41,9 @@ export default function Layout() {
           <Outlet />
         </main>
       </div>
-      {/* Global AI chat — available on every page */}
       <AIChatPanel />
+      <PLCNotificationToast />
+      <PLCStateSync />
     </div>
   );
 }

@@ -11,6 +11,7 @@ import AlertsPage from '@/pages/AlertsPage';
 import DigitalTwinPage from '@/pages/DigitalTwinPage';
 import WorkOrderPage from '@/pages/WorkOrderPage';
 import VideoAnalyticsPage from '@/pages/VideoAnalyticsPage';
+import PLCPage from '@/pages/PLCPage';
 import AboutPage from '@/pages/AboutPage';
 import HelpPage from '@/pages/HelpPage';
 
@@ -29,6 +30,7 @@ export default function App() {
         <Route path="prediction"      element={<PredictionPage />} />
         <Route path="alerts"          element={<AlertsPage />} />
         <Route path="work-orders"     element={<WorkOrderPage />} />
+        <Route path="plc"             element={<PLCPage />} />
         <Route path="config"          element={<BeltConfigPage />} />
         <Route path="about"           element={<AboutPage />} />
         <Route path="help"            element={<HelpPage />} />

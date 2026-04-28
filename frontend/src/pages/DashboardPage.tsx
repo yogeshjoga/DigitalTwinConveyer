@@ -1,4 +1,4 @@
-import { Activity, Thermometer, Zap, Clock, AlertTriangle, Heart, Download, FileSpreadsheet, FileText } from 'lucide-react';
+import { Activity, Thermometer, Zap, Clock, AlertTriangle, Heart, Download, FileSpreadsheet, FileText, Trash2 } from 'lucide-react';
 import { useState, useMemo, useEffect, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import StatCard from '@/components/ui/StatCard';
@@ -13,6 +13,8 @@ import {
   useMLPrediction,
   useSensorHistory,
   useLiveSensors,
+  useClearDefects,
+  useClearGateByDefects,
 } from '@/api/hooks';
 import {
   Chart as ChartJS,
@@ -158,6 +160,8 @@ export default function DashboardPage() {
   const selectedBelt      = useBeltStore((s) => s.selectedBeltEntry);
   const isDark            = theme === 'dark';
   const [exportMenu, setExportMenu] = useState(false);
+  const clearDefects      = useClearDefects();
+  const clearGate         = useClearGateByDefects();
 
   // Belt-reactive data
   const summary = useBeltAwareSummary(selectedBelt);
@@ -270,8 +274,26 @@ export default function DashboardPage() {
           </p>
         </div>
 
-        {/* Download Report button */}
-        <div className="relative">
+        {/* Action buttons */}
+        <div className="flex items-center gap-2">
+          {/* Clear Defects — demo reset button */}
+          <button
+            onClick={() => { clearDefects.mutate(); clearGate.mutate(); }}
+            disabled={clearDefects.isPending}
+            className="flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-semibold transition-all disabled:opacity-50"
+            style={{
+              backgroundColor: 'var(--color-panel)',
+              border: '1px solid #ef444444',
+              color: '#ef4444',
+            }}
+            title="Demo: clears all vision detections, related alerts, and unlocks belt restart gate"
+          >
+            <Trash2 size={14} />
+            {clearDefects.isPending ? 'Clearing…' : 'Clear Defects'}
+          </button>
+
+          {/* Download Report button */}
+          <div className="relative">
           <button
             onClick={() => setExportMenu((v) => !v)}
             className="flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-semibold text-white transition-all"
@@ -305,6 +327,7 @@ export default function DashboardPage() {
               </button>
             </motion.div>
           )}
+        </div>
         </div>
       </div>
 

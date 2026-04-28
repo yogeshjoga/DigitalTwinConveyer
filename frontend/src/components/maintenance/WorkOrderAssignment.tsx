@@ -375,6 +375,7 @@ export default function WorkOrderAssignment({
   const [sending, setSending]                 = useState(false);
   const [showSent, setShowSent]               = useState(false);
   const [filterRole, setFilterRole]           = useState<Engineer["role"]|"all">("all");
+  const [resolvedTicketRef, setResolvedTicketRef] = useState<string | null>(null);
 
   // When tagged issues change, append a reference line to the description
   const addTag = (issue: TaggedIssue) => {
@@ -427,6 +428,7 @@ export default function WorkOrderAssignment({
       }
     }
     setSentTickets((prev) => [...newTickets, ...prev]);
+    setResolvedTicketRef(newTickets[0]?.ticketRef ?? null);
     setSending(false); setShowSent(true); setSelectedEngineers([]);
   };
 
@@ -640,6 +642,29 @@ export default function WorkOrderAssignment({
                         </div>
                       );
                     })}
+
+                    {/* Mark resolved → unlock belt restart */}
+                    {resolvedTicketRef && (
+                      <div className="mt-2 pt-2 border-t" style={{ borderColor:"var(--color-border)" }}>
+                        <p className="text-[11px] text-muted mb-2">
+                          Once the engineer has completed the repair, mark the ticket as resolved to unlock belt restart:
+                        </p>
+                        <button
+                          onClick={async () => {
+                            await fetch(`${import.meta.env.VITE_API_URL ?? 'http://localhost:3001/api'}/plc/clear-gate/ticket`, {
+                              method: 'POST',
+                              headers: { 'Content-Type': 'application/json' },
+                              body: JSON.stringify({ ticketRef: resolvedTicketRef, resolvedBy: 'Work Order System' }),
+                            });
+                            setResolvedTicketRef(null);
+                          }}
+                          className="w-full py-2 rounded-xl text-xs font-bold text-white transition-all"
+                          style={{ background: 'linear-gradient(135deg, #22c55e, #16a34a)' }}
+                        >
+                          ✅ Mark {resolvedTicketRef} as Resolved → Unlock Belt Restart
+                        </button>
+                      </div>
+                    )}
                   </motion.div>
                 )}
               </AnimatePresence>

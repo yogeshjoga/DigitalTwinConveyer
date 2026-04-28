@@ -1,6 +1,7 @@
 import { useRef, useMemo } from 'react';
 import { useFrame } from '@react-three/fiber';
 import * as THREE from 'three';
+import { useBeltStore } from '@/store/useBeltStore';
 
 interface ConveyorBeltProps {
   length: number;
@@ -19,8 +20,9 @@ interface ConveyorBeltProps {
  * When the model is ready, replace this component with a <primitive> or <useGLTF> call.
  */
 export default function ConveyorBelt({ length, width, speed }: ConveyorBeltProps) {
-  const beltRef = useRef<THREE.Mesh>(null);
+  const beltRef   = useRef<THREE.Mesh>(null);
   const offsetRef = useRef(0);
+  const plcRunning = useBeltStore((s) => s.plcBeltRunning);
 
   // Animated belt texture (stripe pattern via canvas)
   const beltTexture = useMemo(() => {
@@ -52,8 +54,9 @@ export default function ConveyorBelt({ length, width, speed }: ConveyorBeltProps
     return tex;
   }, [length]);
 
-  // Scroll texture to simulate belt movement
+  // Scroll texture to simulate belt movement — freeze when PLC stopped
   useFrame((_, delta) => {
+    if (!plcRunning) return;
     offsetRef.current += delta * speed * 0.1;
     beltTexture.offset.x = offsetRef.current;
   });

@@ -10,11 +10,15 @@ import {
   ArrowDown,
   Maximize2,
   Layers,
+  AlertOctagon,
+  Power,
+  ClipboardList,
 } from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
 import BeltScene, { type CameraPreset } from '@/components/three/BeltScene';
-import { useLiveSensors, useThermalZones, useVisionDetections } from '@/api/hooks';
+import { useLiveSensors, useThermalZones, useVisionDetections, usePLCCommand } from '@/api/hooks';
 import { useBeltStore } from '@/store/useBeltStore';
-import { motion } from 'framer-motion';
+import { motion, AnimatePresence } from 'framer-motion';
 
 // ── Camera view definitions ────────────────────────────────────────────────────
 const CAMERA_VIEWS: Array<{
@@ -50,20 +54,41 @@ export default function DigitalTwinPage() {
   const { data: thermal }    = useThermalZones();
   const { data: detections } = useVisionDetections();
   const activeBelt           = useBeltStore((s) => s.activeBelt);
+  const plcRunning           = useBeltStore((s) => s.plcBeltRunning);
+  const plcStopReason        = useBeltStore((s) => s.plcStopReason);
+  const setPLCRunning        = useBeltStore((s) => s.setPLCRunning);
+  const selectedBelt         = useBeltStore((s) => s.selectedBeltEntry);
+  const theme                = useBeltStore((s) => s.theme);
+  const isDark               = theme === 'dark';
+  const sendCmd              = usePLCCommand();
+  const navigate             = useNavigate();
 
   const [showThermal,  setShowThermal]  = useState(true);
   const [showMaterial, setShowMaterial] = useState(true);
   const [showDefects,  setShowDefects]  = useState(true);
   const [cameraPreset, setCameraPreset] = useState<CameraPreset>('perspective');
   const [materialLoad, setMaterialLoad] = useState(30);
+  const [confirmEStop, setConfirmEStop] = useState(false);
 
   const beltLength = activeBelt?.length ?? 20;
   const beltWidth  = activeBelt ? activeBelt.width / 1000 : 1.2;
-  const beltSpeed  = sensors?.beltSpeed ?? activeBelt?.speed ?? 2;
+  // When PLC is stopped, pass speed=0 so any remaining animations see 0
+  const beltSpeed  = plcRunning ? (sensors?.beltSpeed ?? activeBelt?.speed ?? 2) : 0;
 
   const activeView  = CAMERA_VIEWS.find((v) => v.preset === cameraPreset)!;
   const matLevel    = getMaterialLevel(materialLoad);
   const isOverload  = materialLoad > 88;
+
+  const handleEStop = () => {
+    sendCmd.mutate({ command: 'E_STOP', operator: 'Digital Twin Operator', reason: 'Emergency stop from Digital Twin' });
+    setPLCRunning(false, 'Emergency stop from Digital Twin');
+    setConfirmEStop(false);
+  };
+
+  const handleStart = () => {
+    sendCmd.mutate({ command: 'START', operator: 'Digital Twin Operator', reason: 'Start from Digital Twin' });
+    setPLCRunning(true);
+  };
 
   return (
     <div className="space-y-4">
@@ -81,6 +106,45 @@ export default function DigitalTwinPage() {
           <ToggleButton icon={<Eye size={14} />}         label="Defects"  active={showDefects}  onClick={() => setShowDefects((v) => !v)} />
         </div>
       </div>
+
+      {/* ── PLC Stop Banner ─────────────────────────────────────────────── */}
+      <AnimatePresence>
+        {!plcRunning && (
+          <motion.div
+            initial={{ opacity: 0, y: -8 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: -8 }}
+            className="rounded-xl px-4 py-3 flex items-center justify-between gap-4"
+            style={{ backgroundColor: '#ef444412', border: '1.5px solid #ef444444' }}
+          >
+            <div className="flex items-center gap-3">
+              <AlertOctagon size={18} className="text-red-500 flex-shrink-0" />
+              <div>
+                <p className="text-sm font-bold text-red-500">Belt Stopped — 3D Model Frozen</p>
+                <p className="text-xs text-secondary mt-0.5">{plcStopReason ?? 'PLC stop command received'}</p>
+              </div>
+            </div>
+            <div className="flex items-center gap-2 flex-shrink-0">
+              <button
+                onClick={() => navigate('/work-orders')}
+                className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold transition-all"
+                style={{ backgroundColor: '#f59e0b22', border: '1px solid #f59e0b44', color: '#f59e0b' }}
+              >
+                <ClipboardList size={13} />
+                Assign Worker
+              </button>
+              <button
+                onClick={handleStart}
+                className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold text-white transition-all"
+                style={{ background: 'linear-gradient(135deg, #22c55e, #16a34a)' }}
+              >
+                <Power size={13} />
+                Restart Belt
+              </button>
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
 
       {/* ── Material Load Slider ─────────────────────────────────────────── */}
       <div
@@ -242,26 +306,69 @@ export default function DigitalTwinPage() {
           {activeView.label}
         </div>
 
-        {/* Material load badge — top right */}
-        {showMaterial && (
-          <div
-            className="absolute top-3 right-3 flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold"
-            style={{
-              background: matLevel.color + '22',
-              color: matLevel.color,
-              border: `1px solid ${matLevel.color}44`,
-              backdropFilter: 'blur(6px)',
-            }}
-          >
-            <Layers size={12} />
-            {matLevel.label} Load
-          </div>
-        )}
+        {/* Belt running status — top center */}
+        <div className="absolute top-3 left-1/2 -translate-x-1/2 flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold"
+          style={{
+            background: plcRunning ? '#22c55e22' : '#ef444422',
+            border: `1px solid ${plcRunning ? '#22c55e44' : '#ef444444'}`,
+            color: plcRunning ? '#22c55e' : '#ef4444',
+            backdropFilter: 'blur(6px)',
+          }}>
+          <span className={`w-1.5 h-1.5 rounded-full ${plcRunning ? 'bg-green-500 animate-pulse' : 'bg-red-500'}`} />
+          {plcRunning ? 'BELT RUNNING' : 'BELT STOPPED'}
+        </div>
+
+        {/* E-Stop button — top right of canvas */}
+        <div className="absolute top-3 right-3 flex items-center gap-2">
+          {showMaterial && (
+            <div
+              className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold"
+              style={{
+                background: matLevel.color + '22',
+                color: matLevel.color,
+                border: `1px solid ${matLevel.color}44`,
+                backdropFilter: 'blur(6px)',
+              }}
+            >
+              <Layers size={12} />
+              {matLevel.label} Load
+            </div>
+          )}
+          {!confirmEStop ? (
+            <button
+              onClick={() => setConfirmEStop(true)}
+              disabled={!plcRunning}
+              className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold text-white disabled:opacity-40 transition-all"
+              style={{ background: 'rgba(239,68,68,0.85)', backdropFilter: 'blur(6px)', border: '1px solid rgba(239,68,68,0.5)' }}
+            >
+              <AlertOctagon size={13} />
+              E-STOP
+            </button>
+          ) : (
+            <div className="flex items-center gap-1.5 px-2 py-1 rounded-lg"
+              style={{ background: 'rgba(0,0,0,0.75)', backdropFilter: 'blur(6px)', border: '1px solid rgba(239,68,68,0.6)' }}>
+              <span className="text-[10px] text-white font-bold">Confirm?</span>
+              <button onClick={handleEStop}
+                className="px-2 py-0.5 rounded text-[10px] font-bold text-white bg-red-500 hover:bg-red-600">
+                YES
+              </button>
+              <button onClick={() => setConfirmEStop(false)}
+                className="px-2 py-0.5 rounded text-[10px] font-medium text-white/70 hover:text-white">
+                No
+              </button>
+            </div>
+          )}
+        </div>
 
         {/* Camera view buttons — bottom bar */}
         <div
           className="absolute bottom-0 left-0 right-0 flex items-center justify-center gap-2 px-4 py-3"
-          style={{ background: 'linear-gradient(to top, rgba(10,15,26,0.92) 0%, transparent 100%)' }}
+          style={{
+            background: isDark
+              ? 'linear-gradient(to top, rgba(10,15,26,0.85) 0%, transparent 100%)'
+              : 'linear-gradient(to top, rgba(241,245,249,0.92) 0%, transparent 100%)',
+            backdropFilter: 'blur(4px)',
+          }}
         >
           {CAMERA_VIEWS.map((view) => {
             const Icon     = view.icon;
@@ -274,9 +381,15 @@ export default function DigitalTwinPage() {
                 whileTap={{ scale: 0.95 }}
                 className="flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-semibold transition-all"
                 style={{
-                  background:     isActive ? view.color + '33' : 'rgba(255,255,255,0.07)',
-                  color:          isActive ? view.color : 'rgba(255,255,255,0.6)',
-                  border:         `1px solid ${isActive ? view.color + '66' : 'rgba(255,255,255,0.1)'}`,
+                  background: isActive
+                    ? view.color + '33'
+                    : isDark ? 'rgba(255,255,255,0.08)' : 'rgba(0,0,0,0.06)',
+                  color: isActive
+                    ? view.color
+                    : isDark ? 'rgba(255,255,255,0.75)' : 'rgba(30,41,59,0.8)',
+                  border: `1px solid ${isActive
+                    ? view.color + '66'
+                    : isDark ? 'rgba(255,255,255,0.12)' : 'rgba(0,0,0,0.12)'}`,
                   backdropFilter: 'blur(8px)',
                 }}
               >

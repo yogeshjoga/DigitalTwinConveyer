@@ -1,6 +1,7 @@
 import { useRef, useMemo, useEffect } from 'react';
 import { useFrame } from '@react-three/fiber';
 import * as THREE from 'three';
+import { useBeltStore } from '@/store/useBeltStore';
 
 interface MaterialFlowProps {
   beltLength: number;
@@ -60,9 +61,10 @@ export default function MaterialFlow({
   massFlowRate,
   materialLoad,
 }: MaterialFlowProps) {
-  const meshRef      = useRef<THREE.Points>(null);
-  const profile      = loadProfile(materialLoad);
+  const meshRef       = useRef<THREE.Points>(null);
+  const profile       = loadProfile(materialLoad);
   const velocitiesRef = useRef<Float32Array>(new Float32Array(MAX_PARTICLES));
+  const plcRunning    = useBeltStore((s) => s.plcBeltRunning);
 
   // Build full-size buffer once — we'll only render `profile.count` particles
   const positions = useMemo(() => {
@@ -95,7 +97,7 @@ export default function MaterialFlow({
   }, [materialLoad, beltLength, beltWidth]);
 
   useFrame((_, delta) => {
-    if (!meshRef.current) return;
+    if (!meshRef.current || !plcRunning) return;  // freeze when PLC stopped
     const pos = meshRef.current.geometry.attributes.position.array as Float32Array;
     const vel = velocitiesRef.current;
     const p   = loadProfile(materialLoad);

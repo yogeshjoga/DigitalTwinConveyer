@@ -36,6 +36,13 @@ interface BeltStore {
   theme: Theme;
   toggleTheme: () => void;
   setTheme: (t: Theme) => void;
+
+  // ── PLC belt running state ────────────────────────────────────────────────
+  // Single source of truth consumed by Digital Twin 3D scene, material flow,
+  // belt texture animation, and any stop-button across the app.
+  plcBeltRunning: boolean;
+  plcStopReason: string | null;   // human-readable reason shown in UI
+  setPLCRunning: (running: boolean, reason?: string) => void;
 }
 
 function getInitialTheme(): Theme {
@@ -114,4 +121,10 @@ export const useBeltStore = create<BeltStore>((set) => ({
       applyTheme(t);
       return { theme: t };
     }),
+
+  // Belt starts running — PLC default state is running
+  plcBeltRunning: true,
+  plcStopReason: null,
+  setPLCRunning: (running, reason) =>
+    set({ plcBeltRunning: running, plcStopReason: running ? null : (reason ?? 'Manual stop') }),
 }));
