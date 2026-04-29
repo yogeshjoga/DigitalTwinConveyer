@@ -228,8 +228,8 @@ export default function DetectionDetailModal({ detection, imgSrc, onClose }: Pro
   };
 
   const filteredEngineers = filterRole === "all" ? ENGINEERS : ENGINEERS.filter((e) => e.role === filterRole);
-  const priorityColor = { low:"#27a372", medium:"#f59e0b", high:"#f97316", critical:"#ef4444" }[priority];
-  const sevColor = d.severity === "high" ? "#ef4444" : d.severity === "medium" ? "#f59e0b" : "#27a372";
+  const priorityColor = { low:"#22c55e", medium:"#f97316", high:"#ef4444", critical:"#ef4444" }[priority] ?? '#94a3b8';
+  const sevColor = d.severity === "high" ? "#ef4444" : d.severity === "medium" ? "#f97316" : "#22c55e";
 
   return (
     <>

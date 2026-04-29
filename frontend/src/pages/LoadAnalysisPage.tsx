@@ -50,6 +50,9 @@ export default function LoadAnalysisPage() {
     interaction: { mode: 'index' as const, intersect: false },
   };
 
+  // Helper: hide Y-axis in scrollable chart (sticky column handles it)
+  const noYAxis = { y: { display: false } };
+
   const udlLineOpts: ChartOptions<'line'> = {
     ...baseOpts,
     plugins: {
@@ -77,17 +80,9 @@ export default function LoadAnalysisPage() {
       x: {
         display: true,
         grid: { color: colors.grid },
-        ticks: {
-          color: colors.tick,
-          font: { size: 9 },
-          maxRotation: 0,
-          callback: (_val, idx) => idx % 30 === 0 ? labels[idx] : '',
-        },
+        ticks: { color: colors.tick, font: { size: 9 }, maxRotation: 0, callback: (_val, idx) => idx % 30 === 0 ? labels[idx] : '' },
       },
-      y: {
-        grid: { color: colors.grid },
-        ticks: { color: colors.tick, font: { size: 10 } },
-      },
+      y: { display: false },
     },
     elements: {
       point: { radius: 0, hoverRadius: 5, hoverBorderWidth: 2, hoverBackgroundColor: '#ffffff' },
@@ -125,17 +120,9 @@ export default function LoadAnalysisPage() {
       x: {
         display: true,
         grid: { color: colors.grid },
-        ticks: {
-          color: colors.tick,
-          font: { size: 9 },
-          maxRotation: 0,
-          callback: (_val, idx) => idx % 30 === 0 ? labels[idx] : '',
-        },
+        ticks: { color: colors.tick, font: { size: 9 }, maxRotation: 0, callback: (_val, idx) => idx % 30 === 0 ? labels[idx] : '' },
       },
-      y: {
-        grid: { color: colors.grid },
-        ticks: { color: colors.tick, font: { size: 10 } },
-      },
+      y: { display: false },
     },
   };
 
@@ -176,6 +163,7 @@ export default function LoadAnalysisPage() {
           title="UDL Trend"
           subtitle="UDL (kg/m) — scroll ← for history · zoom ± for density"
           pointCount={labels.length}
+          yValues={udlValues}
           height={220}
           accentColor="#27a372"
           isFrozen={buf.isFrozen}
@@ -209,6 +197,7 @@ export default function LoadAnalysisPage() {
           title="Load Cell vs Impact Force"
           subtitle="Scroll ← for history · hover to compare load cell (kg) and impact force (×10 kN)"
           pointCount={labels.length}
+          yValues={[...loadCellValues, ...impactForceValues.map(v => v * 10)]}
           height={220}
           accentColor="#3b82f6"
           isFrozen={buf.isFrozen}

@@ -86,8 +86,8 @@ function QuickAssignDrawer({
   const toggleCh = (ch: Channel) =>
     setSelectedChannels((p) => p.includes(ch) ? p.filter((c) => c !== ch) : [...p, ch]);
 
-  const priorityColor = { low: '#27a372', medium: '#f59e0b', high: '#f97316', critical: '#ef4444' }[priority];
-  const severityColor = alert.severity === 'critical' ? '#ef4444' : alert.severity === 'warning' ? '#f59e0b' : '#3b82f6';
+  const priorityColor = { low: '#22c55e', medium: '#f97316', high: '#ef4444', critical: '#ef4444' }[priority] ?? '#94a3b8';
+  const severityColor = alert.severity === 'critical' ? '#ef4444' : alert.severity === 'warning' ? '#f97316' : '#3b82f6';
 
   const filteredEngineers = filterRole === 'all' ? ENGINEERS : ENGINEERS.filter((e) => e.role === filterRole);
 
@@ -484,7 +484,7 @@ export default function AlertsPage() {
             className={`px-3 py-1 rounded-full text-xs font-medium transition-colors ${
               filter === s
                 ? s === 'critical' ? 'bg-red-500/20 text-red-600 dark:text-red-400 border border-red-500/40'
-                : s === 'warning'  ? 'bg-amber-500/20 text-amber-600 dark:text-amber-400 border border-amber-500/40'
+                : s === 'warning'  ? 'bg-orange-500/20 text-orange-600 dark:text-orange-400 border border-orange-500/40'
                 : s === 'info'     ? 'bg-blue-500/20 text-blue-600 dark:text-blue-400 border border-blue-500/40'
                 :                   'bg-brand-500/20 text-brand-500 border border-brand-500/30'
                 : 'bg-black/5 dark:bg-white/5 text-secondary border border-transparent hover:text-primary'

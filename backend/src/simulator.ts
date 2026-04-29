@@ -29,13 +29,19 @@ function noise(base: number, pct: number) {
 }
 
 // ── Sustained-condition tracking ─────────────────────────────────────────────
-// For E_STOP / STOP rules: the condition must hold continuously for
-// SUSTAINED_WINDOW_MS (10 minutes) before the belt is stopped.
-// This prevents transient spikes from stopping the belt.
+// For E_STOP / STOP rules: the condition must hold for SUSTAINED_WINDOW_MS
+// (10 minutes) before the belt is stopped.
+//
+// Key design: brief drops below threshold (< RESET_GRACE_MS) do NOT reset
+// the timer. This prevents transient spikes from repeatedly restarting the
+// 10-min clock. Only a genuine recovery (condition false for > 30 seconds)
+// resets the timer.
 const SUSTAINED_WINDOW_MS = 10 * 60 * 1000; // 10 minutes
+const RESET_GRACE_MS      = 30 * 1000;       // 30 seconds grace before timer resets
 
-// Per-rule: timestamp when the condition first became true (null = not active)
-const conditionFirstTrueAt: Record<string, number | null> = {};
+// Per-rule tracking
+const conditionFirstTrueAt:  Record<string, number | null> = {};
+const conditionLastFalseAt:  Record<string, number | null> = {};
 
 // Vision: track high-severity detection timestamps for the 2-in-10-min rule
 const highSeverityDetectionTimes: number[] = [];
@@ -83,7 +89,8 @@ function runAutoRules(reading: SensorReading, latestVisionConfidence: number) {
     // Don't re-trigger if belt is already stopped/e-stopped
     const beltAlreadyStopped = ['stopped', 'stopping', 'e-stop', 'fault'].includes(plcState.beltState);
     if (rule.triggerAction !== 'ALERT_ONLY' && beltAlreadyStopped) {
-      conditionFirstTrueAt[rule.id] = null; // reset tracking when belt is stopped
+      conditionFirstTrueAt[rule.id] = null;
+      conditionLastFalseAt[rule.id] = null;
       continue;
     }
 
@@ -103,13 +110,21 @@ function runAutoRules(reading: SensorReading, latestVisionConfidence: number) {
     }
 
     if (!conditionMet) {
-      // Condition no longer met — reset sustained timer
-      conditionFirstTrueAt[rule.id] = null;
-
-      // For low/medium defects (ALERT_ONLY rules), still alert when condition is met
-      // but don't stop the belt — handled below when conditionMet is true
+      // Condition not met — start grace period before resetting timer
+      if (conditionFirstTrueAt[rule.id] != null) {
+        if (conditionLastFalseAt[rule.id] == null) {
+          conditionLastFalseAt[rule.id] = now;
+        } else if (now - conditionLastFalseAt[rule.id]! > RESET_GRACE_MS) {
+          // Condition has been false for > 30s — genuine recovery, reset timer
+          conditionFirstTrueAt[rule.id] = null;
+          conditionLastFalseAt[rule.id] = null;
+        }
+      }
       continue;
     }
+
+    // Condition is met — clear the false-timer
+    conditionLastFalseAt[rule.id] = null;
 
     // ── Sustained-duration check for stop/e-stop rules ──────────────────────
     const isStopAction = rule.triggerAction === 'E_STOP' || rule.triggerAction === 'STOP';
@@ -261,22 +276,28 @@ export function startSimulator(intervalMs = 2000) {
   setInterval(() => {
     tick++;
 
-    // ── When belt is stopped/e-stopped, generate NO new sensor readings.
-    // A static belt produces no load, vibration, or speed data.
-    // We still run the auto-rule engine so it can detect recovery conditions.
     const beltStopped = ['stopped', 'stopping', 'e-stop', 'fault'].includes(plcState.beltState);
 
     if (!beltStopped) {
-      const isAnomaly = Math.random() < 0.05;
+      // Anomaly: rare (1% chance = roughly once every 3 minutes)
+      // Anomaly values are deliberately kept BELOW the E-Stop thresholds
+      // so they generate warning alerts but never trigger the 10-min stop gate.
+      // Only a genuinely sustained condition (real sensor drift over 10 min) stops the belt.
+      const isAnomaly = Math.random() < 0.01;
 
       const reading: SensorReading = {
         timestamp:   new Date().toISOString(),
-        loadCell:    clamp(noise(250, 0.15) + (isAnomaly ? 200 : 0), 0, 600),
-        impactForce: clamp(noise(8, 0.2)   + (isAnomaly ? 15 : 0),  0, 50),
-        beltSpeed:   clamp(noise(2.5, 0.05), 1, 6),
-        temperature: clamp(noise(35, 0.1)  + (isAnomaly ? 30 : 0),  20, 120),
-        vibration:   clamp(noise(2, 0.2)   + (isAnomaly ? 8 : 0),   0, 20),
-        udl:         clamp(noise(200, 0.15) + (isAnomaly ? 150 : 0), 50, 500),
+        // Normal: ~250 kg  |  Anomaly spike: max ~420 kg (below 480 E-Stop threshold)
+        loadCell:    clamp(noise(250, 0.12) + (isAnomaly ? 150 : 0), 0, 600),
+        // Normal: ~8 kN    |  Anomaly spike: max ~28 kN (below 40 kN E-Stop threshold)
+        impactForce: clamp(noise(8, 0.15)  + (isAnomaly ? 18 : 0),  0, 50),
+        beltSpeed:   clamp(noise(2.5, 0.04), 1, 6),
+        // Normal: ~35°C    |  Anomaly spike: max ~75°C (below 100°C Stop threshold)
+        temperature: clamp(noise(35, 0.08) + (isAnomaly ? 35 : 0),  20, 120),
+        // Normal: ~2 mm/s  |  Anomaly spike: max ~10 mm/s (at vibration alert threshold)
+        vibration:   clamp(noise(2, 0.15)  + (isAnomaly ? 7 : 0),   0, 20),
+        // Normal: ~200 kg/m|  Anomaly spike: max ~380 kg/m (below 420 reduce-speed threshold)
+        udl:         clamp(noise(200, 0.12) + (isAnomaly ? 160 : 0), 50, 500),
       };
 
       pushSensor(reading);
@@ -310,19 +331,21 @@ export function startSimulator(intervalMs = 2000) {
           value: reading.vibration, unit: 'mm/s', acknowledged: false });
       }
 
-      // Vision detections — only when belt is running
-      // Low/medium defects are common; high-severity is rare (5% chance)
+      // Vision detections:
+      // - Low / medium defects: every 30 seconds (tick % 15 at 2s interval)
+      // - High-severity: only 2% chance per scan — roughly once every 25 minutes
+      // - Critical auto-stop rule requires 2 high-severity in 10 min window (very rare)
       let latestVisionConfidence = 0;
       if (tick % 15 === 0) {
         const defects = ['tear', 'hole', 'edge_damage', 'layer_peeling', 'none'] as const;
         const defect  = defects[Math.floor(Math.random() * defects.length)];
         const confidence = 0.7 + Math.random() * 0.3;
 
-        // Severity distribution: 70% low, 25% medium, 5% high
+        // Severity distribution: 78% low, 20% medium, 2% high
         const sevRoll = Math.random();
         const severity = defect === 'none' ? 'low' as const
-          : sevRoll > 0.95 ? 'high' as const
-          : sevRoll > 0.70 ? 'medium' as const
+          : sevRoll > 0.98 ? 'high' as const
+          : sevRoll > 0.78 ? 'medium' as const
           : 'low' as const;
 
         const detection: VisionDetection = {
@@ -336,18 +359,16 @@ export function startSimulator(intervalMs = 2000) {
         if (visionDetections.length > 50) visionDetections.pop();
 
         if (defect !== 'none' && severity === 'high') {
-          // High severity — pass confidence to auto-rule engine
           latestVisionConfidence = confidence;
           pushAlert({ id: uuid(), timestamp: detection.timestamp, type: 'tear_risk', severity: 'critical',
             message: `Vision: HIGH severity ${defect.replace('_', ' ')} detected (${(confidence * 100).toFixed(0)}% confidence) — monitoring for auto-stop`,
             acknowledged: false });
         } else if (defect !== 'none' && severity === 'medium') {
-          // Medium severity — alert only, no belt stop
           pushAlert({ id: uuid(), timestamp: detection.timestamp, type: 'tear_risk', severity: 'warning',
             message: `Vision: MEDIUM ${defect.replace('_', ' ')} detected (${(confidence * 100).toFixed(0)}% confidence) — monitoring`,
             acknowledged: false });
         }
-        // Low severity — no alert, just logged in vision detections
+        // Low severity — logged in vision detections, no alert
       }
 
       // ── Run PLC auto-rule engine ──────────────────────────────────────────

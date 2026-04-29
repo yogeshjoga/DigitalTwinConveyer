@@ -254,8 +254,7 @@ export default function DashboardPage() {
         },
       },
       y: {
-        grid: { color: colors.grid },
-        ticks: { color: colors.tick, font: { size: 10 } },
+        display: false,  // sticky column in ScrollableChart handles Y-axis
       },
     },
     elements: {
@@ -362,6 +361,7 @@ export default function DashboardPage() {
             title="Load Trend"
             subtitle="UDL (kg/m) — scroll ← for history · auto-scrolls to latest"
             pointCount={udlBuf.labels.length}
+            yValues={udlBuf.values}
             height={192}
             accentColor={selectedBelt.color}
             isFrozen={udlBuf.isFrozen}

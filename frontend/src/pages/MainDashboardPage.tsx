@@ -13,7 +13,7 @@ import { VIDEO_EVENTS, DEFECT_COLORS, DEFECT_LABELS } from '@/data/videoAnalytic
 import type { DefectType } from '@/types';
 
 // ── Defect severity buckets ───────────────────────────────────────────────────
-const SEV_COLOR = { low: '#22c55e', medium: '#f59e0b', high: '#ef4444' };
+const SEV_COLOR = { low: '#22c55e', medium: '#f97316', high: '#ef4444' };
 
 const DEFECT_ICONS: Record<Exclude<DefectType, 'none'>, React.ElementType> = {
   tear:          Scissors,

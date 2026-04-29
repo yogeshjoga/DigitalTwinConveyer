@@ -27,7 +27,7 @@ function fmtDate(iso: string) { return new Date(iso).toLocaleDateString([], { mo
 function todayStr() { return new Date().toISOString().slice(0, 10); }
 function yesterdayStr() { const d = new Date(); d.setDate(d.getDate() - 1); return d.toISOString().slice(0, 10); }
 
-const SEV_COLORS: Record<string, string> = { low: "#27a372", medium: "#f59e0b", high: "#ef4444" };
+const SEV_COLORS: Record<string, string> = { low: "#22c55e", medium: "#f97316", high: "#ef4444" };
 
 const DEFECT_ICONS: Record<DefectType, React.ReactNode> = {
   tear: <Scissors size={11} />, hole: <Circle size={11} />,

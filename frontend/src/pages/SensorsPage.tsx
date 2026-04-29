@@ -94,18 +94,12 @@ export default function SensorsPage() {
       plugins: {
         legend: { display: false },
         tooltip: {
-          enabled: true,
-          mode: 'index',
-          intersect: false,
-          backgroundColor: colors.tooltip.bg,
-          borderColor: colors.tooltip.border,
-          borderWidth: 1,
-          titleColor: colors.tooltip.title,
-          bodyColor: colors.tooltip.body,
+          enabled: true, mode: 'index', intersect: false,
+          backgroundColor: colors.tooltip.bg, borderColor: colors.tooltip.border, borderWidth: 1,
+          titleColor: colors.tooltip.title, bodyColor: colors.tooltip.body,
           titleFont: { size: 11, weight: 'bold', family: 'Inter, sans-serif' },
           bodyFont: { size: 11, family: 'Inter, sans-serif' },
-          padding: { x: 12, y: 8 },
-          cornerRadius: 8,
+          padding: { x: 12, y: 8 }, cornerRadius: 8,
           callbacks: {
             title: (items) => items[0]?.label ?? '',
             label: (ctx) => `  ${typeof ctx.parsed.y === 'number' ? ctx.parsed.y.toFixed(2) : ctx.parsed.y} ${unit}`,
@@ -114,19 +108,10 @@ export default function SensorsPage() {
       },
       scales: {
         x: {
-          display: true,
-          grid: { color: colors.grid },
-          ticks: {
-            color: colors.tick,
-            font: { size: 9 },
-            maxRotation: 0,
-            callback: (_val, idx) => idx % 30 === 0 ? labels[idx] : '',
-          },
+          display: true, grid: { color: colors.grid },
+          ticks: { color: colors.tick, font: { size: 9 }, maxRotation: 0, callback: (_val, idx) => idx % 30 === 0 ? labels[idx] : '' },
         },
-        y: {
-          grid: { color: colors.grid },
-          ticks: { color: colors.tick, font: { size: 10 } },
-        },
+        y: { display: false },  // sticky column handles Y-axis
       },
       elements: {
         point: { radius: 0, hoverRadius: 5, hoverBorderWidth: 2, hoverBackgroundColor: '#ffffff' },
@@ -136,28 +121,17 @@ export default function SensorsPage() {
   }
 
   const overlayOpts: ChartOptions<'line'> = {
-    responsive: true,
-    maintainAspectRatio: false,
-    animation: false,
+    responsive: true, maintainAspectRatio: false, animation: false,
     interaction: { mode: 'index', intersect: false },
     plugins: {
-      legend: {
-        display: true,
-        labels: { color: colors.tick, font: { size: 11 }, boxWidth: 12, padding: 16 },
-      },
+      legend: { display: true, labels: { color: colors.tick, font: { size: 11 }, boxWidth: 12, padding: 16 } },
       tooltip: {
-        enabled: true,
-        mode: 'index',
-        intersect: false,
-        backgroundColor: colors.tooltip.bg,
-        borderColor: colors.tooltip.border,
-        borderWidth: 1,
-        titleColor: colors.tooltip.title,
-        bodyColor: colors.tooltip.body,
+        enabled: true, mode: 'index', intersect: false,
+        backgroundColor: colors.tooltip.bg, borderColor: colors.tooltip.border, borderWidth: 1,
+        titleColor: colors.tooltip.title, bodyColor: colors.tooltip.body,
         titleFont: { size: 11, weight: 'bold', family: 'Inter, sans-serif' },
         bodyFont: { size: 11, family: 'Inter, sans-serif' },
-        padding: { x: 12, y: 8 },
-        cornerRadius: 8,
+        padding: { x: 12, y: 8 }, cornerRadius: 8,
         callbacks: {
           title: (items) => items[0]?.label ?? '',
           label: (ctx) => `  ${ctx.dataset.label}: ${typeof ctx.parsed.y === 'number' ? ctx.parsed.y.toFixed(3) : ctx.parsed.y}`,
@@ -166,21 +140,10 @@ export default function SensorsPage() {
     },
     scales: {
       x: {
-        display: true,
-        grid: { color: colors.grid },
-        ticks: {
-          color: colors.tick,
-          font: { size: 9 },
-          maxRotation: 0,
-          callback: (_val, idx) => idx % 30 === 0 ? labels[idx] : '',
-        },
+        display: true, grid: { color: colors.grid },
+        ticks: { color: colors.tick, font: { size: 9 }, maxRotation: 0, callback: (_val, idx) => idx % 30 === 0 ? labels[idx] : '' },
       },
-      y: {
-        grid: { color: colors.grid },
-        ticks: { color: colors.tick, font: { size: 10 } },
-        min: 0,
-        max: 1.1,
-      },
+      y: { display: false, min: 0, max: 1.1 },
     },
     elements: {
       point: { radius: 0, hoverRadius: 5, hoverBorderWidth: 2, hoverBackgroundColor: '#ffffff' },
@@ -230,6 +193,7 @@ export default function SensorsPage() {
                 title={`${s.label} Trend`}
                 subtitle={`${s.unit} — scroll ← for history`}
                 pointCount={labels.length}
+                yValues={s.data}
                 height={160}
                 accentColor={s.color}
                 isFrozen={buf.isFrozen}
@@ -275,6 +239,7 @@ export default function SensorsPage() {
         title="All Sensors — Normalised Overlay"
         subtitle="Values normalised 0–1 against critical threshold · scroll ← for history"
         pointCount={labels.length}
+        yValues={sensors.flatMap(s => s.data.map(v => v / s.critAt))}
         height={220}
         accentColor="#8b5cf6"
         isFrozen={buf.isFrozen}

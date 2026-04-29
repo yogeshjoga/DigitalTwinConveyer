@@ -1,31 +1,45 @@
 /**
  * ScrollableChart — Grafana-style horizontally-scrollable Chart.js wrapper.
  *
- * Animation strategy:
- *   Chart.js animation is DISABLED (animation: false) to avoid the "all
- *   points fly in" glitch. The right-to-left slide effect is achieved purely
- *   via CSS scroll-behavior: smooth on the viewport container — when a new
- *   point is appended the canvas grows by ~12 px and the viewport smoothly
- *   scrolls right to follow it, which looks exactly like the chart is
- *   sliding left as new data arrives.
+ * Y-axis is rendered in a fixed-width sticky column on the left so it
+ * stays visible while the user scrolls the time axis to the right.
+ *
+ * How it works:
+ *  - The outer wrapper is `display: flex`.
+ *  - Left column (Y_AXIS_WIDTH px): a Chart.js <Line> with only the Y-axis
+ *    visible, no data drawn, `responsive: true`, same height as the main chart.
+ *  - Right column: the horizontally-scrollable canvas with Y-axis hidden.
+ *  - Both charts receive the same `yMin`/`yMax` so the scales align perfectly.
+ *  - The left column uses `position: sticky; left: 0` so it never scrolls.
  */
 
-import { useRef, useEffect, useState, type ReactNode } from 'react';
+import { useRef, useEffect, useState, useMemo, type ReactNode } from 'react';
 import { ZoomIn, ZoomOut, RotateCcw } from 'lucide-react';
+import {
+  Chart as ChartJS,
+  CategoryScale, LinearScale, PointElement, LineElement,
+  BarElement, Filler, Tooltip, Legend,
+} from 'chart.js';
+import { Line } from 'react-chartjs-2';
+import { useBeltStore } from '@/store/useBeltStore';
+
+ChartJS.register(CategoryScale, LinearScale, PointElement, LineElement, BarElement, Filler, Tooltip, Legend);
+
+const Y_AXIS_WIDTH = 52; // px — wide enough for 4-digit numbers
 
 interface ScrollableChartProps {
   title: string;
   subtitle?: string;
   pointCount: number;
+  /** The data values — used to compute Y min/max for the sticky axis */
+  yValues?: number[];
   height?: number;
   basePxPerPoint?: number;
   badge?: ReactNode;
-  /** Render-prop — receives (width, height). animationOpts is no longer used. */
   children: (width: number, height: number, animationOpts: object) => ReactNode;
   onStateChange?: (zoom: number, autoScroll: boolean) => void;
   className?: string;
   accentColor?: string;
-  /** When true, shows a BELT STOPPED overlay and disables scroll animation */
   isFrozen?: boolean;
 }
 
@@ -33,6 +47,7 @@ export default function ScrollableChart({
   title,
   subtitle,
   pointCount,
+  yValues = [],
   height = 220,
   basePxPerPoint = 12,
   badge,
@@ -42,9 +57,11 @@ export default function ScrollableChart({
   accentColor = '#27a372',
   isFrozen = false,
 }: ScrollableChartProps) {
-  const scrollRef      = useRef<HTMLDivElement>(null);
-  const prevCount      = useRef(0);
+  const scrollRef       = useRef<HTMLDivElement>(null);
+  const prevCount       = useRef(0);
   const initialLoadDone = useRef(false);
+  const theme           = useBeltStore((s) => s.theme);
+  const isDark          = theme === 'dark';
 
   const [zoom, setZoom]             = useState(1);
   const [autoScroll, setAutoScroll] = useState(true);
@@ -52,34 +69,32 @@ export default function ScrollableChart({
   const PX_PER_POINT = Math.max(6, basePxPerPoint * zoom);
   const chartWidth   = Math.max(pointCount * PX_PER_POINT, 600);
 
-  // Scroll to right edge when new points arrive or zoom changes.
-  // - Before initial load settles: always instant snap (no animation).
-  // - After settled: smooth scroll only when exactly new points trickle in
-  //   (i.e. small incremental additions, not a bulk load).
+  // Compute Y range from data for the sticky axis
+  const { yMin, yMax } = useMemo(() => {
+    if (!yValues.length) return { yMin: 0, yMax: 1 };
+    const min = Math.min(...yValues);
+    const max = Math.max(...yValues);
+    const pad = (max - min) * 0.08 || 1;
+    return { yMin: Math.floor(min - pad), yMax: Math.ceil(max + pad) };
+  }, [yValues]);
+
+  // Auto-scroll logic
   useEffect(() => {
     const el = scrollRef.current;
     if (!el || !autoScroll) return;
-
     const added = pointCount - prevCount.current;
     prevCount.current = pointCount;
-
-    // Consider initial load "done" once we've seen data and had one stable render
     if (!initialLoadDone.current) {
       if (pointCount > 0) {
-        // Snap instantly — no scroll animation during initial data fill
         el.scrollLeft = el.scrollWidth;
-        // Mark settled after a short delay so rapid initial batches don't trigger smooth
         const t = setTimeout(() => { initialLoadDone.current = true; }, 800);
         return () => clearTimeout(t);
       }
       return;
     }
-
     if (added > 0 && added <= 5) {
-      // Small incremental update — smooth slide (the "new point arrives" effect)
       el.scrollTo({ left: el.scrollWidth, behavior: 'smooth' });
     } else {
-      // Bulk update (zoom change, large batch) — instant reposition
       el.scrollLeft = el.scrollWidth;
     }
   }, [pointCount, zoom, autoScroll]);
@@ -94,24 +109,45 @@ export default function ScrollableChart({
     }
   };
 
-  const handleZoomIn = () =>
-    setZoom((z) => { const n = Math.min(z * 1.5, 8); onStateChange?.(n, autoScroll); return n; });
-
-  const handleZoomOut = () =>
-    setZoom((z) => { const n = Math.max(z / 1.5, 0.25); onStateChange?.(n, autoScroll); return n; });
-
-  const handleReset = () => {
-    setZoom(1);
-    setAutoScroll(true);
-    onStateChange?.(1, true);
-    requestAnimationFrame(() => {
-      if (scrollRef.current)
-        scrollRef.current.scrollLeft = scrollRef.current.scrollWidth;
-    });
+  const handleZoomIn  = () => setZoom((z) => { const n = Math.min(z * 1.5, 8);   onStateChange?.(n, autoScroll); return n; });
+  const handleZoomOut = () => setZoom((z) => { const n = Math.max(z / 1.5, 0.25); onStateChange?.(n, autoScroll); return n; });
+  const handleReset   = () => {
+    setZoom(1); setAutoScroll(true); onStateChange?.(1, true);
+    requestAnimationFrame(() => { if (scrollRef.current) scrollRef.current.scrollLeft = scrollRef.current.scrollWidth; });
   };
 
-  // Pass animation:false so Chart.js never re-animates all points on update
   const animationOpts = { animation: false as const };
+
+  // Theme colors
+  const gridColor = isDark ? '#1e293b' : '#e2e8f0';
+  const tickColor = isDark ? '#64748b' : '#94a3b8';
+
+  // Sticky Y-axis chart — no data, just the axis
+  const yAxisOpts: import('chart.js').ChartOptions<'line'> = {
+    responsive: true,
+    maintainAspectRatio: false,
+    animation: false,
+    events: [],           // no hover/tooltip on the axis chart
+    plugins: { legend: { display: false }, tooltip: { enabled: false } },
+    scales: {
+      x: { display: false },
+      y: {
+        display: true,
+        position: 'left',
+        min: yMin,
+        max: yMax,
+        grid: { color: gridColor, drawTicks: false },
+        border: { display: false },
+        ticks: {
+          color: tickColor,
+          font: { size: 9 },
+          maxTicksLimit: 6,
+          padding: 4,
+        },
+      },
+    },
+    layout: { padding: { top: 4, bottom: 4 } },
+  };
 
   return (
     <div className={`card p-0 overflow-hidden flex flex-col ${className}`}>
@@ -126,23 +162,10 @@ export default function ScrollableChart({
         </div>
 
         <div className="flex items-center gap-1 flex-shrink-0 ml-3">
-          <button onClick={handleZoomIn}
-            className="p-1.5 rounded-lg text-muted hover:text-primary hover:bg-black/5 dark:hover:bg-white/5 transition-colors"
-            title="Zoom in">
-            <ZoomIn size={13} />
-          </button>
-          <button onClick={handleZoomOut}
-            className="p-1.5 rounded-lg text-muted hover:text-primary hover:bg-black/5 dark:hover:bg-white/5 transition-colors"
-            title="Zoom out">
-            <ZoomOut size={13} />
-          </button>
-          <button onClick={handleReset}
-            className="p-1.5 rounded-lg text-muted hover:text-primary hover:bg-black/5 dark:hover:bg-white/5 transition-colors"
-            title="Reset · jump to latest">
-            <RotateCcw size={12} />
-          </button>
+          <button onClick={handleZoomIn}  className="p-1.5 rounded-lg text-muted hover:text-primary hover:bg-black/5 dark:hover:bg-white/5 transition-colors" title="Zoom in"><ZoomIn size={13} /></button>
+          <button onClick={handleZoomOut} className="p-1.5 rounded-lg text-muted hover:text-primary hover:bg-black/5 dark:hover:bg-white/5 transition-colors" title="Zoom out"><ZoomOut size={13} /></button>
+          <button onClick={handleReset}   className="p-1.5 rounded-lg text-muted hover:text-primary hover:bg-black/5 dark:hover:bg-white/5 transition-colors" title="Reset · jump to latest"><RotateCcw size={12} /></button>
 
-          {/* LIVE / PAUSED / STOPPED pill */}
           <div className="flex items-center gap-1.5 ml-1 px-2 py-1 rounded-lg transition-colors"
             style={{
               backgroundColor: isFrozen ? '#ef444418' : autoScroll ? accentColor + '18' : 'var(--color-surface)',
@@ -156,36 +179,53 @@ export default function ScrollableChart({
             </span>
           </div>
 
-          <span className="text-[10px] text-muted font-mono ml-1 hidden sm:block">
-            {pointCount} pts
-          </span>
+          <span className="text-[10px] text-muted font-mono ml-1 hidden sm:block">{pointCount} pts</span>
         </div>
       </div>
 
-      {/* Scrollable canvas area */}
-      <div
-        ref={scrollRef}
-        onScroll={handleScroll}
-        className="overflow-x-auto overflow-y-hidden"
-        style={{ cursor: isFrozen ? 'default' : 'grab', WebkitOverflowScrolling: 'touch' }}
-      >
-        {/* position:relative required for Chart.js responsive mode */}
-        <div style={{ position: 'relative', width: chartWidth, height, minWidth: '100%' }}>
-          {children(chartWidth, height, animationOpts)}
-          {/* Frozen overlay — subtle red tint when belt is stopped */}
-          {isFrozen && (
-            <div
-              className="absolute inset-0 flex items-center justify-center pointer-events-none"
-              style={{ backgroundColor: 'rgba(239,68,68,0.04)' }}
-            >
-              <span
-                className="px-3 py-1 rounded-full text-[10px] font-bold uppercase tracking-widest"
-                style={{ backgroundColor: 'rgba(239,68,68,0.12)', color: '#ef4444', border: '1px solid rgba(239,68,68,0.3)' }}
-              >
-                ⏸ Belt Stopped — Data Frozen
-              </span>
-            </div>
+      {/* Chart area: sticky Y-axis + scrollable canvas */}
+      <div className="flex flex-1 overflow-hidden">
+
+        {/* ── Sticky Y-axis column ── */}
+        <div
+          className="flex-shrink-0 z-10"
+          style={{
+            width: Y_AXIS_WIDTH,
+            height,
+            position: 'sticky',
+            left: 0,
+            backgroundColor: 'var(--color-panel)',
+            borderRight: `1px solid ${gridColor}`,
+          }}
+        >
+          {yValues.length > 0 && (
+            <Line
+              data={{ labels: [''], datasets: [{ data: [yMin, yMax], borderWidth: 0, pointRadius: 0 }] }}
+              options={yAxisOpts}
+            />
           )}
+        </div>
+
+        {/* ── Scrollable canvas ── */}
+        <div
+          ref={scrollRef}
+          onScroll={handleScroll}
+          className="flex-1 overflow-x-auto overflow-y-hidden"
+          style={{ cursor: isFrozen ? 'default' : 'grab', WebkitOverflowScrolling: 'touch' }}
+        >
+          <div style={{ position: 'relative', width: chartWidth, height, minWidth: '100%' }}>
+            {children(chartWidth, height, animationOpts)}
+
+            {isFrozen && (
+              <div className="absolute inset-0 flex items-center justify-center pointer-events-none"
+                style={{ backgroundColor: 'rgba(239,68,68,0.04)' }}>
+                <span className="px-3 py-1 rounded-full text-[10px] font-bold uppercase tracking-widest"
+                  style={{ backgroundColor: 'rgba(239,68,68,0.12)', color: '#ef4444', border: '1px solid rgba(239,68,68,0.3)' }}>
+                  ⏸ Belt Stopped — Data Frozen
+                </span>
+              </div>
+            )}
+          </div>
         </div>
       </div>
 

@@ -438,7 +438,7 @@ export default function VisionPage() {
               className={`px-2.5 py-1 rounded-lg text-xs font-medium transition-colors border ${
                 severityFilter === s
                   ? s === 'high'   ? 'bg-red-500/20 text-red-600 dark:text-red-400 border-red-500/40'
-                  : s === 'medium' ? 'bg-amber-500/20 text-amber-600 dark:text-amber-400 border-amber-500/40'
+                  : s === 'medium' ? 'bg-orange-500/20 text-orange-600 dark:text-orange-400 border-orange-500/40'
                   : s === 'low'    ? 'bg-green-500/20 text-green-600 dark:text-green-400 border-green-500/40'
                   :                  'bg-brand-500/20 text-brand-500 border-brand-500/30'
                   : 'text-secondary border-transparent hover:text-primary bg-black/5 dark:bg-white/5'
@@ -530,7 +530,7 @@ export default function VisionPage() {
                       {/* Severity pill */}
                       <span className={`absolute top-2 right-2 text-[10px] px-2 py-0.5 rounded-full font-bold uppercase shadow ${
                         d.severity === 'high'   ? 'bg-red-500 text-white'
-                        : d.severity === 'medium' ? 'bg-amber-500 text-white'
+                        : d.severity === 'medium' ? 'bg-orange-500 text-white'
                         :                           'bg-green-500 text-white'
                       }`}>
                         {d.severity}

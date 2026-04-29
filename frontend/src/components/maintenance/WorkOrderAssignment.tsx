@@ -285,7 +285,7 @@ function TagPicker({
                         </div>
                         <span
                           className="text-[9px] px-1.5 py-0.5 rounded-full font-bold uppercase flex-shrink-0"
-                          style={{ background: d.severity === "high" ? "#ef444422" : d.severity === "medium" ? "#f59e0b22" : "#27a37222", color: d.severity === "high" ? "#ef4444" : d.severity === "medium" ? "#f59e0b" : "#27a372" }}
+                          style={{ background: d.severity === "high" ? "#ef444422" : d.severity === "medium" ? "#f9731622" : "#22c55e22", color: d.severity === "high" ? "#ef4444" : d.severity === "medium" ? "#f97316" : "#22c55e" }}
                         >
                           {d.severity}
                         </span>
@@ -407,7 +407,7 @@ export default function WorkOrderAssignment({
 
   const filteredEngineers = filterRole === "all" ? ENGINEERS : ENGINEERS.filter((e) => e.role === filterRole);
 
-  const priorityColor = { low:"#27a372", medium:"#f59e0b", high:"#f97316", critical:"#ef4444" }[priority];
+  const priorityColor = { low:"#22c55e", medium:"#f97316", high:"#ef4444", critical:"#ef4444" }[priority] ?? '#94a3b8';
 
   const handleSend = async () => {
     if (selectedEngineers.length === 0 || selectedChannels.length === 0) return;
@@ -627,7 +627,7 @@ export default function WorkOrderAssignment({
                     {sentTickets.map((t) => {
                       const ch = CHANNELS.find((c)=>c.id===t.channel)!;
                       const ChIcon = ch.icon;
-                      const pColor = { low:"#27a372",medium:"#f59e0b",high:"#f97316",critical:"#ef4444" }[t.priority]??"#27a372";
+                      const pColor = { low:"#22c55e",medium:"#f97316",high:"#ef4444",critical:"#ef4444" }[t.priority]??"#22c55e";
                       return (
                         <div key={t.id} className="flex items-center gap-2 px-2.5 py-2 rounded-lg"
                           style={{ background:"var(--color-panel)", border:"1px solid var(--color-border)" }}>
