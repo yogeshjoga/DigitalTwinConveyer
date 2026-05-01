@@ -1,5 +1,6 @@
-import { Routes, Route, Navigate } from 'react-router-dom';
+import { Routes, Route } from 'react-router-dom';
 import Layout from '@/components/layout/Layout';
+import LandingPage from '@/pages/LandingPage';
 import MainDashboardPage from '@/pages/MainDashboardPage';
 import DashboardPage from '@/pages/DashboardPage';
 import BeltConfigPage from '@/pages/BeltConfigPage';
@@ -20,6 +21,10 @@ import HelpPage from '@/pages/HelpPage';
 export default function App() {
   return (
     <Routes>
+      {/* Landing page — outside the app shell, no sidebar/topbar */}
+      <Route path="/landing" element={<LandingPage />} />
+
+      {/* App shell — sidebar + topbar */}
       <Route path="/" element={<Layout />}>
         <Route index element={<MainDashboardPage />} />
         <Route path="dashboard"       element={<DashboardPage />} />

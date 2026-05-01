@@ -70,12 +70,12 @@ export default function Sidebar() {
       }`}
       style={{ backgroundColor: 'var(--color-panel)', borderColor: 'var(--color-border)' }}
     >
-      {/* Logo — clicking navigates to Fleet Overview (home) */}
+      {/* Logo — clicking navigates to Landing Page */}
       <Link
-        to="/"
+        to="/landing"
         className="flex items-center gap-3 px-4 py-4 border-b transition-colors hover:bg-black/5 dark:hover:bg-white/5"
         style={{ borderColor: 'var(--color-border)' }}
-        title="Fleet Overview — Home"
+        title="Home — Landing Page"
       >
         <img src={dtcLogo} alt="DTC Logo"
           className="w-8 h-8 rounded-lg object-contain flex-shrink-0"
