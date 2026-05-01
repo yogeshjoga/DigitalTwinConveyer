@@ -70,9 +70,23 @@ export default function MaterialFlow({
   const positions = useMemo(() => {
     const pos = new Float32Array(MAX_PARTICLES * 3);
     const vel = new Float32Array(MAX_PARTICLES);
+    const TROUGH_ANGLE = 35 * (Math.PI / 180);
+    const halfFlat = beltWidth * 0.33;
+    const wingLen  = beltWidth * 0.335;
+
     for (let i = 0; i < MAX_PARTICLES; i++) {
-      pos[i * 3]     = (Math.random() - 0.5) * beltWidth * profile.spread;
-      pos[i * 3 + 1] = 0.03 + Math.random() * profile.heapHeight;
+      // Place particles inside the trough cross-section
+      const xRand = (Math.random() - 0.5) * beltWidth * profile.spread;
+      // Compute Y based on trough profile so particles sit on the belt surface
+      const absX = Math.abs(xRand);
+      let yBase = 0;
+      if (absX > halfFlat) {
+        // On the wing — follow the angled surface
+        const wingDist = absX - halfFlat;
+        yBase = wingDist * Math.tan(TROUGH_ANGLE);
+      }
+      pos[i * 3]     = xRand;
+      pos[i * 3 + 1] = yBase + 0.03 + Math.random() * profile.heapHeight;
       pos[i * 3 + 2] = (Math.random() - 0.5) * beltLength;
       vel[i]          = speed * (0.75 + Math.random() * 0.5);
     }
@@ -86,13 +100,21 @@ export default function MaterialFlow({
     if (!meshRef.current) return;
     const pos = meshRef.current.geometry.attributes.position.array as Float32Array;
     const p   = loadProfile(materialLoad);
+    const TROUGH_ANGLE = 35 * (Math.PI / 180);
+    const halfFlat = beltWidth * 0.33;
+
     for (let i = 0; i < MAX_PARTICLES; i++) {
-      pos[i * 3]     = (Math.random() - 0.5) * beltWidth * p.spread;
-      pos[i * 3 + 1] = 0.03 + Math.random() * p.heapHeight;
+      const xRand = (Math.random() - 0.5) * beltWidth * p.spread;
+      const absX  = Math.abs(xRand);
+      let yBase = 0;
+      if (absX > halfFlat) {
+        yBase = (absX - halfFlat) * Math.tan(TROUGH_ANGLE);
+      }
+      pos[i * 3]     = xRand;
+      pos[i * 3 + 1] = yBase + 0.03 + Math.random() * p.heapHeight;
       pos[i * 3 + 2] = (Math.random() - 0.5) * beltLength;
     }
     meshRef.current.geometry.attributes.position.needsUpdate = true;
-    // Update draw range
     meshRef.current.geometry.setDrawRange(0, p.count);
   }, [materialLoad, beltLength, beltWidth]);
 

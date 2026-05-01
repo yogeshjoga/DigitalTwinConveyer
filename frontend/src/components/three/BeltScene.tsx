@@ -3,7 +3,6 @@ import { Canvas, useThree } from '@react-three/fiber';
 import {
   OrbitControls,
   Environment,
-  Grid,
   Text,
   Html,
 } from '@react-three/drei';
@@ -112,13 +111,6 @@ function SceneContent({
 
       <Environment preset="warehouse" />
 
-      <Grid
-        args={[50, 50]}
-        position={[0, -0.6, 0]}
-        cellColor={gridCell}
-        sectionColor={gridSect}
-        fadeDistance={40}
-      />
 
       <ConveyorBelt length={beltLength} width={beltWidth} speed={beltSpeed} />
 
