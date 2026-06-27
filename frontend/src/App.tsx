@@ -1,6 +1,7 @@
 import { Routes, Route } from 'react-router-dom';
 import Layout from '@/components/layout/Layout';
 import LandingPage from '@/pages/LandingPage';
+import ConveyorLandingPage from '@/pages/ConveyorLandingPage';
 import MainDashboardPage from '@/pages/MainDashboardPage';
 import DashboardPage from '@/pages/DashboardPage';
 import BeltConfigPage from '@/pages/BeltConfigPage';
@@ -23,6 +24,7 @@ export default function App() {
     <Routes>
       {/* Landing page — outside the app shell, no sidebar/topbar */}
       <Route path="/landing" element={<LandingPage />} />
+      <Route path="/conveyor" element={<ConveyorLandingPage />} />
 
       {/* App shell — sidebar + topbar */}
       <Route path="/" element={<Layout />}>
