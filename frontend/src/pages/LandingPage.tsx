@@ -53,7 +53,7 @@ export default function LandingPage() {
     <div style={{ fontFamily: "Inter, sans-serif", backgroundColor: theme.bg, color: theme.textPrimary, minHeight: "100vh", transition: "all 0.3s ease" }}>
       {/* NAVBAR */}
       <nav style={{ position: "sticky", top: 0, zIndex: 50, backgroundColor: theme.navBg, backdropFilter: "blur(12px)", borderBottom: `1px solid ${theme.borderSoft}`, padding: "0 2rem", height: 64, display: "flex", alignItems: "center", justifyContent: "space-between", transition: "all 0.3s ease" }}>
-        <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
+        <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
           <img src={dtcLogo} alt="DTC" style={{ width: 36, height: 36, borderRadius: 8 }} />
           <div>
             <div style={{ fontWeight: 700, fontSize: 15, color: theme.textPrimary }}>Industry 4.0 Ecosystem</div>
@@ -88,14 +88,14 @@ export default function LandingPage() {
             <span style={{ width: 6, height: 6, borderRadius: "50%", background: "#3b82f6", display: "inline-block", animation: "pulse 2s infinite" }} />
             Proudly Made In India
           </div>
-          <h1 style={{ fontSize: "clamp(2.5rem,4.5vw,4rem)", fontWeight: 800, lineHeight: 1.1, marginBottom: 24, color: isDarkMode ? "#f1f5f9" : "#0f172a" }}>
+          <h1 style={{ fontSize: "clamp(2rem,3.5vw,3.2rem)", fontWeight: 800, lineHeight: 1.1, marginBottom: 16, color: isDarkMode ? "#f1f5f9" : "#0f172a" }}>
             India's 1st Industry 4.1 & 5.0<br />End-to-End IIoT Ecosystem
           </h1>
-          <p style={{ fontSize: "clamp(1rem,2vw,1.25rem)", color: theme.textSecondary, maxWidth: 750, margin: "0 auto 16px", lineHeight: 1.7, fontWeight: 500 }}>
+          <p style={{ fontSize: "clamp(0.9rem,1.5vw,1.1rem)", color: theme.textSecondary, maxWidth: 750, margin: "0 auto 16px", lineHeight: 1.7, fontWeight: 500 }}>
             A fully customizable smart factory architecture. We unify real-time digital twins, autonomous drones, AI video analytics, and smart robotics to automate and optimize your entire operation.
           </p>
-          <div style={{ display: "inline-block", padding: "12px 24px", borderRadius: 16, background: isDarkMode ? "rgba(15,23,42,0.6)" : "rgba(255,255,255,0.7)", backdropFilter: "blur(12px)", border: `1px solid ${isDarkMode ? "rgba(255,255,255,0.1)" : "rgba(0,0,0,0.08)"}`, marginBottom: 40, boxShadow: "0 8px 32px rgba(0,0,0,0.05)" }}>
-            <p style={{ fontSize: "0.95rem", color: isDarkMode ? "#60a5fa" : "#1d4ed8", fontWeight: 800, margin: 0, letterSpacing: 0.5, textTransform: "uppercase" }}>
+          <div style={{ display: "inline-block", padding: "10px 20px", borderRadius: 16, background: isDarkMode ? "rgba(15,23,42,0.6)" : "rgba(255,255,255,0.7)", backdropFilter: "blur(12px)", border: `1px solid ${isDarkMode ? "rgba(255,255,255,0.1)" : "rgba(0,0,0,0.08)"}`, marginBottom: 32, boxShadow: "0 8px 32px rgba(0,0,0,0.05)" }}>
+            <p style={{ fontSize: "0.85rem", color: isDarkMode ? "#60a5fa" : "#1d4ed8", fontWeight: 800, margin: 0, letterSpacing: 0.5, textTransform: "uppercase" }}>
               100% Indigenous Innovation: Every chip and system architecture is proudly designed and engineered in India.
             </p>
           </div>
@@ -150,180 +150,180 @@ export default function LandingPage() {
 
             </div>
 
-            <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit,minmax(450px,1fr))", gap: 32 }}>
+            <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit,minmax(350px,1fr))", gap: 24 }}>
               
               {/* 2. AI Video Searching & Analytics */}
-              <motion.div whileHover={{ y: -8, scale: 1.01 }} transition={{ duration: 0.2 }} style={{ padding: 32, borderRadius: 24, background: theme.panelBg, border: `1px solid ${theme.borderSoft}`, position: "relative", boxShadow: isDarkMode ? "none" : "0 4px 20px rgba(0,0,0,0.05)" }}>
-                <img src={aiVideoImg} alt="AI Video Analytics" style={{ width: "100%", height: 220, objectFit: "cover", borderRadius: 16, marginBottom: 24, border: `1px solid ${theme.borderSoft}` }} />
-                <div style={{ width: 56, height: 56, borderRadius: 16, background: "rgba(59,130,246,0.15)", border: "1px solid rgba(59,130,246,0.3)", display: "flex", alignItems: "center", justifyContent: "center", marginBottom: 24 }}>
-                  <Video size={26} color="#3b82f6" />
+              <motion.div whileHover={{ y: -8, scale: 1.01 }} transition={{ duration: 0.2 }} style={{ padding: 24, borderRadius: 24, background: theme.panelBg, border: `1px solid ${theme.borderSoft}`, position: "relative", boxShadow: isDarkMode ? "none" : "0 4px 20px rgba(0,0,0,0.05)" }}>
+                <img src={aiVideoImg} alt="AI Video Analytics" style={{ width: "100%", height: 180, objectFit: "cover", borderRadius: 16, marginBottom: 20, border: `1px solid ${theme.borderSoft}` }} />
+                <div style={{ width: 48, height: 48, borderRadius: 16, background: "rgba(59,130,246,0.15)", border: "1px solid rgba(59,130,246,0.3)", display: "flex", alignItems: "center", justifyContent: "center", marginBottom: 16 }}>
+                  <Video size={24} color="#3b82f6" />
                 </div>
-                <h3 style={{ fontSize: 24, fontWeight: 800, color: theme.textPrimary, marginBottom: 16 }}>AI Video Searching & Analytics</h3>
-                <p style={{ fontSize: 15, color: theme.textSecondary, lineHeight: 1.7, marginBottom: 24 }}>
+                <h3 style={{ fontSize: 20, fontWeight: 800, color: theme.textPrimary, marginBottom: 12 }}>AI Video Searching & Analytics</h3>
+                <p style={{ fontSize: 13, color: theme.textSecondary, lineHeight: 1.6, marginBottom: 16 }}>
                   Advanced edge-computing vision models to transform raw CCTV feeds into structured safety and operational intelligence.
                 </p>
-                <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
-                  <div style={{ display: "flex", alignItems: "center", gap: 12, fontSize: 14, fontWeight: 500, color: theme.checkText }}>
-                    <CheckCircle2 size={18} color="#3b82f6" /> PPE Detection (Hardhats, vests, glasses)
+                <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
+                  <div style={{ display: "flex", alignItems: "center", gap: 10, fontSize: 12, fontWeight: 500, color: theme.checkText }}>
+                    <CheckCircle2 size={16} color="#3b82f6" /> PPE Detection (Hardhats, vests, glasses)
                   </div>
-                  <div style={{ display: "flex", alignItems: "center", gap: 12, fontSize: 14, fontWeight: 500, color: theme.checkText }}>
-                    <CheckCircle2 size={18} color="#3b82f6" /> Smart safety engineering alerts sent directly to smart helmets
+                  <div style={{ display: "flex", alignItems: "center", gap: 10, fontSize: 12, fontWeight: 500, color: theme.checkText }}>
+                    <CheckCircle2 size={16} color="#3b82f6" /> Smart safety engineering alerts sent directly to smart helmets
                   </div>
-                  <div style={{ display: "flex", alignItems: "center", gap: 12, fontSize: 14, fontWeight: 500, color: theme.checkText }}>
-                    <CheckCircle2 size={18} color="#3b82f6" /> Easy natural language video search by frames
+                  <div style={{ display: "flex", alignItems: "center", gap: 10, fontSize: 12, fontWeight: 500, color: theme.checkText }}>
+                    <CheckCircle2 size={16} color="#3b82f6" /> Easy natural language video search by frames
                   </div>
-                  <div style={{ display: "flex", alignItems: "center", gap: 12, fontSize: 14, fontWeight: 500, color: theme.checkText }}>
-                    <CheckCircle2 size={18} color="#3b82f6" /> Easy object and anomaly detection
+                  <div style={{ display: "flex", alignItems: "center", gap: 10, fontSize: 12, fontWeight: 500, color: theme.checkText }}>
+                    <CheckCircle2 size={16} color="#3b82f6" /> Easy object and anomaly detection
                   </div>
-                  <div style={{ display: "flex", alignItems: "center", gap: 12, fontSize: 14, fontWeight: 500, color: theme.checkText }}>
-                    <CheckCircle2 size={18} color="#3b82f6" /> Vehicle detection and Automatic Number Plate Recognition (ANPR)
+                  <div style={{ display: "flex", alignItems: "center", gap: 10, fontSize: 12, fontWeight: 500, color: theme.checkText }}>
+                    <CheckCircle2 size={16} color="#3b82f6" /> Vehicle detection and Automatic Number Plate Recognition (ANPR)
                   </div>
-                  <div style={{ display: "flex", alignItems: "center", gap: 12, fontSize: 14, fontWeight: 500, color: theme.checkText }}>
-                    <CheckCircle2 size={18} color="#3b82f6" /> Robotic interaction through Digital Twin & IIoT
+                  <div style={{ display: "flex", alignItems: "center", gap: 10, fontSize: 12, fontWeight: 500, color: theme.checkText }}>
+                    <CheckCircle2 size={16} color="#3b82f6" /> Robotic interaction through Digital Twin & IIoT
                   </div>
                 </div>
               </motion.div>
 
               {/* 3. Autonomous Drone Technology */}
-              <motion.div whileHover={{ y: -8, scale: 1.01 }} transition={{ duration: 0.2 }} style={{ padding: 32, borderRadius: 24, background: theme.panelBg, border: `1px solid ${theme.borderSoft}`, position: "relative", boxShadow: isDarkMode ? "none" : "0 4px 20px rgba(0,0,0,0.05)" }}>
-                <img src={dronesImg} alt="Autonomous Drones" style={{ width: "100%", height: 220, objectFit: "cover", borderRadius: 16, marginBottom: 24, border: `1px solid ${theme.borderSoft}` }} />
-                <div style={{ width: 56, height: 56, borderRadius: 16, background: "rgba(168,85,247,0.15)", border: "1px solid rgba(168,85,247,0.3)", display: "flex", alignItems: "center", justifyContent: "center", marginBottom: 24 }}>
-                  <Plane size={26} color="#a855f7" />
+              <motion.div whileHover={{ y: -8, scale: 1.01 }} transition={{ duration: 0.2 }} style={{ padding: 24, borderRadius: 24, background: theme.panelBg, border: `1px solid ${theme.borderSoft}`, position: "relative", boxShadow: isDarkMode ? "none" : "0 4px 20px rgba(0,0,0,0.05)" }}>
+                <img src={dronesImg} alt="Autonomous Drones" style={{ width: "100%", height: 180, objectFit: "cover", borderRadius: 16, marginBottom: 20, border: `1px solid ${theme.borderSoft}` }} />
+                <div style={{ width: 48, height: 48, borderRadius: 16, background: "rgba(168,85,247,0.15)", border: "1px solid rgba(168,85,247,0.3)", display: "flex", alignItems: "center", justifyContent: "center", marginBottom: 16 }}>
+                  <Plane size={24} color="#a855f7" />
                 </div>
-                <h3 style={{ fontSize: 24, fontWeight: 800, color: theme.textPrimary, marginBottom: 16 }}>Autonomous Drone Technology</h3>
-                <p style={{ fontSize: 15, color: theme.textSecondary, lineHeight: 1.7, marginBottom: 24 }}>
+                <h3 style={{ fontSize: 20, fontWeight: 800, color: theme.textPrimary, marginBottom: 12 }}>Autonomous Drone Technology</h3>
+                <p style={{ fontSize: 13, color: theme.textSecondary, lineHeight: 1.6, marginBottom: 16 }}>
                   Aerial intelligence fleet managed through our centralized command hub for heavy industries and extensive site footprints.
                 </p>
-                <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
-                  <div style={{ display: "flex", alignItems: "center", gap: 12, fontSize: 14, fontWeight: 500, color: theme.checkText }}>
-                    <CheckCircle2 size={18} color="#a855f7" /> FPV Drones for rapid remote inspections
+                <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
+                  <div style={{ display: "flex", alignItems: "center", gap: 10, fontSize: 12, fontWeight: 500, color: theme.checkText }}>
+                    <CheckCircle2 size={16} color="#a855f7" /> FPV Drones for rapid remote inspections
                   </div>
-                  <div style={{ display: "flex", alignItems: "center", gap: 12, fontSize: 14, fontWeight: 500, color: theme.checkText }}>
-                    <CheckCircle2 size={18} color="#a855f7" /> 24/7 Security & Perimeter Surveillances
+                  <div style={{ display: "flex", alignItems: "center", gap: 10, fontSize: 12, fontWeight: 500, color: theme.checkText }}>
+                    <CheckCircle2 size={16} color="#a855f7" /> 24/7 Security & Perimeter Surveillances
                   </div>
-                  <div style={{ display: "flex", alignItems: "center", gap: 12, fontSize: 14, fontWeight: 500, color: theme.checkText }}>
-                    <CheckCircle2 size={18} color="#a855f7" /> 3D Mapping & Site Engineering
+                  <div style={{ display: "flex", alignItems: "center", gap: 10, fontSize: 12, fontWeight: 500, color: theme.checkText }}>
+                    <CheckCircle2 size={16} color="#a855f7" /> 3D Mapping & Site Engineering
                   </div>
-                  <div style={{ display: "flex", alignItems: "center", gap: 12, fontSize: 14, fontWeight: 500, color: theme.checkText }}>
-                    <CheckCircle2 size={18} color="#a855f7" /> Automated volumetric stockpiling estimations
+                  <div style={{ display: "flex", alignItems: "center", gap: 10, fontSize: 12, fontWeight: 500, color: theme.checkText }}>
+                    <CheckCircle2 size={16} color="#a855f7" /> Automated volumetric stockpiling estimations
                   </div>
                 </div>
               </motion.div>
 
               {/* 4. Smart Worker Helmets */}
-              <motion.div whileHover={{ y: -8, scale: 1.01 }} transition={{ duration: 0.2 }} style={{ padding: 32, borderRadius: 24, background: theme.panelBg, border: `1px solid ${theme.borderSoft}`, position: "relative", boxShadow: isDarkMode ? "none" : "0 4px 20px rgba(0,0,0,0.05)" }}>
-                <img src={helmetsImg} alt="Smart Worker Helmets" style={{ width: "100%", height: 220, objectFit: "cover", borderRadius: 16, marginBottom: 24, border: `1px solid ${theme.borderSoft}` }} />
-                <div style={{ width: 56, height: 56, borderRadius: 16, background: "rgba(245,158,11,0.15)", border: "1px solid rgba(245,158,11,0.3)", display: "flex", alignItems: "center", justifyContent: "center", marginBottom: 24 }}>
-                  <HardHat size={26} color="#f59e0b" />
+              <motion.div whileHover={{ y: -8, scale: 1.01 }} transition={{ duration: 0.2 }} style={{ padding: 24, borderRadius: 24, background: theme.panelBg, border: `1px solid ${theme.borderSoft}`, position: "relative", boxShadow: isDarkMode ? "none" : "0 4px 20px rgba(0,0,0,0.05)" }}>
+                <img src={helmetsImg} alt="Smart Worker Helmets" style={{ width: "100%", height: 180, objectFit: "cover", borderRadius: 16, marginBottom: 20, border: `1px solid ${theme.borderSoft}` }} />
+                <div style={{ width: 48, height: 48, borderRadius: 16, background: "rgba(245,158,11,0.15)", border: "1px solid rgba(245,158,11,0.3)", display: "flex", alignItems: "center", justifyContent: "center", marginBottom: 16 }}>
+                  <HardHat size={24} color="#f59e0b" />
                 </div>
-                <h3 style={{ fontSize: 24, fontWeight: 800, color: theme.textPrimary, marginBottom: 16 }}>Smart Worker Helmets</h3>
-                <p style={{ fontSize: 15, color: theme.textSecondary, lineHeight: 1.7, marginBottom: 24 }}>
+                <h3 style={{ fontSize: 20, fontWeight: 800, color: theme.textPrimary, marginBottom: 12 }}>Smart Worker Helmets</h3>
+                <p style={{ fontSize: 13, color: theme.textSecondary, lineHeight: 1.6, marginBottom: 16 }}>
                   Next-gen personal protective equipment integrating AR, AI, and continuous connectivity for field engineers.
                 </p>
-                <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
-                  <div style={{ display: "flex", alignItems: "center", gap: 12, fontSize: 14, fontWeight: 500, color: theme.checkText }}>
-                    <CheckCircle2 size={18} color="#f59e0b" /> Edge AI object detection built into the visor
+                <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
+                  <div style={{ display: "flex", alignItems: "center", gap: 10, fontSize: 12, fontWeight: 500, color: theme.checkText }}>
+                    <CheckCircle2 size={16} color="#f59e0b" /> Edge AI object detection built into the visor
                   </div>
-                  <div style={{ display: "flex", alignItems: "center", gap: 12, fontSize: 14, fontWeight: 500, color: theme.checkText }}>
-                    <CheckCircle2 size={18} color="#f59e0b" /> Real-time Audio and Video recording for compliance
+                  <div style={{ display: "flex", alignItems: "center", gap: 10, fontSize: 12, fontWeight: 500, color: theme.checkText }}>
+                    <CheckCircle2 size={16} color="#f59e0b" /> Real-time Audio and Video recording for compliance
                   </div>
-                  <div style={{ display: "flex", alignItems: "center", gap: 12, fontSize: 14, fontWeight: 500, color: theme.checkText }}>
-                    <CheckCircle2 size={18} color="#f59e0b" /> Smart AR suggestions overlaid to the worker
+                  <div style={{ display: "flex", alignItems: "center", gap: 10, fontSize: 12, fontWeight: 500, color: theme.checkText }}>
+                    <CheckCircle2 size={16} color="#f59e0b" /> Smart AR suggestions overlaid to the worker
                   </div>
-                  <div style={{ display: "flex", alignItems: "center", gap: 12, fontSize: 14, fontWeight: 500, color: theme.checkText }}>
-                    <CheckCircle2 size={18} color="#f59e0b" /> Over-the-shoulder remote troubleshooting help
+                  <div style={{ display: "flex", alignItems: "center", gap: 10, fontSize: 12, fontWeight: 500, color: theme.checkText }}>
+                    <CheckCircle2 size={16} color="#f59e0b" /> Over-the-shoulder remote troubleshooting help
                   </div>
-                  <div style={{ display: "flex", alignItems: "center", gap: 12, fontSize: 14, fontWeight: 500, color: theme.checkText }}>
-                    <CheckCircle2 size={18} color="#f59e0b" /> Fast fire and evacuation alerts to every user
+                  <div style={{ display: "flex", alignItems: "center", gap: 10, fontSize: 12, fontWeight: 500, color: theme.checkText }}>
+                    <CheckCircle2 size={16} color="#f59e0b" /> Fast fire and evacuation alerts to every user
                   </div>
-                  <div style={{ display: "flex", alignItems: "center", gap: 12, fontSize: 14, fontWeight: 500, color: theme.checkText }}>
-                    <CheckCircle2 size={18} color="#f59e0b" /> Mandatory wear compliance tracking
+                  <div style={{ display: "flex", alignItems: "center", gap: 10, fontSize: 12, fontWeight: 500, color: theme.checkText }}>
+                    <CheckCircle2 size={16} color="#f59e0b" /> Mandatory wear compliance tracking
                   </div>
                 </div>
               </motion.div>
 
               {/* 5. Smart Robots */}
-              <motion.div whileHover={{ y: -8, scale: 1.01 }} transition={{ duration: 0.2 }} style={{ padding: 32, borderRadius: 24, background: theme.panelBg, border: `1px solid ${theme.borderSoft}`, position: "relative", boxShadow: isDarkMode ? "none" : "0 4px 20px rgba(0,0,0,0.05)" }}>
-                <img src={robotsImg} alt="Smart Robots" style={{ width: "100%", height: 220, objectFit: "cover", borderRadius: 16, marginBottom: 24, border: `1px solid ${theme.borderSoft}` }} />
-                <div style={{ width: 56, height: 56, borderRadius: 16, background: "rgba(236,72,153,0.15)", border: "1px solid rgba(236,72,153,0.3)", display: "flex", alignItems: "center", justifyContent: "center", marginBottom: 24 }}>
-                  <Bot size={26} color="#ec4899" />
+              <motion.div whileHover={{ y: -8, scale: 1.01 }} transition={{ duration: 0.2 }} style={{ padding: 24, borderRadius: 24, background: theme.panelBg, border: `1px solid ${theme.borderSoft}`, position: "relative", boxShadow: isDarkMode ? "none" : "0 4px 20px rgba(0,0,0,0.05)" }}>
+                <img src={robotsImg} alt="Smart Robots" style={{ width: "100%", height: 180, objectFit: "cover", borderRadius: 16, marginBottom: 20, border: `1px solid ${theme.borderSoft}` }} />
+                <div style={{ width: 48, height: 48, borderRadius: 16, background: "rgba(236,72,153,0.15)", border: "1px solid rgba(236,72,153,0.3)", display: "flex", alignItems: "center", justifyContent: "center", marginBottom: 16 }}>
+                  <Bot size={24} color="#ec4899" />
                 </div>
-                <h3 style={{ fontSize: 24, fontWeight: 800, color: theme.textPrimary, marginBottom: 16 }}>Smart Robots</h3>
-                <p style={{ fontSize: 15, color: theme.textSecondary, lineHeight: 1.7, marginBottom: 24 }}>
+                <h3 style={{ fontSize: 20, fontWeight: 800, color: theme.textPrimary, marginBottom: 12 }}>Smart Robots</h3>
+                <p style={{ fontSize: 13, color: theme.textSecondary, lineHeight: 1.6, marginBottom: 16 }}>
                   Automated Guided Vehicles (AGVs) and Autonomous Mobile Robots (AMRs) perfectly synced with the IIoT core.
                 </p>
-                <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
-                  <div style={{ display: "flex", alignItems: "center", gap: 12, fontSize: 14, fontWeight: 500, color: theme.checkText }}>
-                    <CheckCircle2 size={18} color="#ec4899" /> Mobile equipment distribution point to point
+                <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
+                  <div style={{ display: "flex", alignItems: "center", gap: 10, fontSize: 12, fontWeight: 500, color: theme.checkText }}>
+                    <CheckCircle2 size={16} color="#ec4899" /> Mobile equipment distribution point to point
                   </div>
-                  <div style={{ display: "flex", alignItems: "center", gap: 12, fontSize: 14, fontWeight: 500, color: theme.checkText }}>
-                    <CheckCircle2 size={18} color="#ec4899" /> Dynamic obstacle avoidance using LiDAR
+                  <div style={{ display: "flex", alignItems: "center", gap: 10, fontSize: 12, fontWeight: 500, color: theme.checkText }}>
+                    <CheckCircle2 size={16} color="#ec4899" /> Dynamic obstacle avoidance using LiDAR
                   </div>
-                  <div style={{ display: "flex", alignItems: "center", gap: 12, fontSize: 14, fontWeight: 500, color: theme.checkText }}>
-                    <CheckCircle2 size={18} color="#ec4899" /> Fleet orchestration via Digital Twin UI
+                  <div style={{ display: "flex", alignItems: "center", gap: 10, fontSize: 12, fontWeight: 500, color: theme.checkText }}>
+                    <CheckCircle2 size={16} color="#ec4899" /> Fleet orchestration via Digital Twin UI
                   </div>
                 </div>
               </motion.div>
 
               {/* 6. Agentic CAD/CAM/FEA Software */}
-              <motion.div whileHover={{ y: -8, scale: 1.01 }} transition={{ duration: 0.2 }} style={{ padding: 32, borderRadius: 24, background: theme.panelBg, border: `1px solid ${theme.borderSoft}`, position: "relative", boxShadow: isDarkMode ? "none" : "0 4px 20px rgba(0,0,0,0.05)" }}>
-                <img src={cadImg} alt="Agentic CAD CAM" style={{ width: "100%", height: 220, objectFit: "cover", borderRadius: 16, marginBottom: 24, border: `1px solid ${theme.borderSoft}` }} />
-                <div style={{ width: 56, height: 56, borderRadius: 16, background: "rgba(16,185,129,0.15)", border: "1px solid rgba(16,185,129,0.3)", display: "flex", alignItems: "center", justifyContent: "center", marginBottom: 24 }}>
-                  <Brain size={26} color="#10b981" />
+              <motion.div whileHover={{ y: -8, scale: 1.01 }} transition={{ duration: 0.2 }} style={{ padding: 24, borderRadius: 24, background: theme.panelBg, border: `1px solid ${theme.borderSoft}`, position: "relative", boxShadow: isDarkMode ? "none" : "0 4px 20px rgba(0,0,0,0.05)" }}>
+                <img src={cadImg} alt="Agentic CAD CAM" style={{ width: "100%", height: 180, objectFit: "cover", borderRadius: 16, marginBottom: 20, border: `1px solid ${theme.borderSoft}` }} />
+                <div style={{ width: 48, height: 48, borderRadius: 16, background: "rgba(16,185,129,0.15)", border: "1px solid rgba(16,185,129,0.3)", display: "flex", alignItems: "center", justifyContent: "center", marginBottom: 16 }}>
+                  <Brain size={24} color="#10b981" />
                 </div>
-                <h3 style={{ fontSize: 24, fontWeight: 800, color: theme.textPrimary, marginBottom: 16 }}>Agentic CAD, CAM & FEA</h3>
-                <p style={{ fontSize: 15, color: theme.textSecondary, lineHeight: 1.7, marginBottom: 24 }}>
+                <h3 style={{ fontSize: 20, fontWeight: 800, color: theme.textPrimary, marginBottom: 12 }}>Agentic CAD, CAM & FEA</h3>
+                <p style={{ fontSize: 13, color: theme.textSecondary, lineHeight: 1.6, marginBottom: 16 }}>
                   Generative AI for mechanical design. Transform text prompts into 3D manufacturing files and simulations instantly.
                 </p>
-                <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
-                  <div style={{ display: "flex", alignItems: "center", gap: 12, fontSize: 14, fontWeight: 500, color: theme.checkText }}>
-                    <CheckCircle2 size={18} color="#10b981" /> Provide a text prompt to generate 90% accurate 3D models
+                <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
+                  <div style={{ display: "flex", alignItems: "center", gap: 10, fontSize: 12, fontWeight: 500, color: theme.checkText }}>
+                    <CheckCircle2 size={16} color="#10b981" /> Provide a text prompt to generate 90% accurate 3D models
                   </div>
-                  <div style={{ display: "flex", alignItems: "center", gap: 12, fontSize: 14, fontWeight: 500, color: theme.checkText }}>
-                    <CheckCircle2 size={18} color="#10b981" /> Automated CNC toolpath scripting (CAM generation)
+                  <div style={{ display: "flex", alignItems: "center", gap: 10, fontSize: 12, fontWeight: 500, color: theme.checkText }}>
+                    <CheckCircle2 size={16} color="#10b981" /> Automated CNC toolpath scripting (CAM generation)
                   </div>
-                  <div style={{ display: "flex", alignItems: "center", gap: 12, fontSize: 14, fontWeight: 500, color: theme.checkText }}>
-                    <CheckCircle2 size={18} color="#10b981" /> Rapid Finite Element Analysis (FEA) simulations
+                  <div style={{ display: "flex", alignItems: "center", gap: 10, fontSize: 12, fontWeight: 500, color: theme.checkText }}>
+                    <CheckCircle2 size={16} color="#10b981" /> Rapid Finite Element Analysis (FEA) simulations
                   </div>
-                  <div style={{ display: "flex", alignItems: "center", gap: 12, fontSize: 14, fontWeight: 500, color: theme.checkText }}>
-                    <CheckCircle2 size={18} color="#10b981" /> Final 10% refinement via human engineering & testing
+                  <div style={{ display: "flex", alignItems: "center", gap: 10, fontSize: 12, fontWeight: 500, color: theme.checkText }}>
+                    <CheckCircle2 size={16} color="#10b981" /> Final 10% refinement via human engineering & testing
                   </div>
-                  <div style={{ display: "flex", alignItems: "center", gap: 12, fontSize: 14, fontWeight: 500, color: theme.checkText }}>
-                    <CheckCircle2 size={18} color="#10b981" /> Drastically reduces R&D prototyping lifecycle
+                  <div style={{ display: "flex", alignItems: "center", gap: 10, fontSize: 12, fontWeight: 500, color: theme.checkText }}>
+                    <CheckCircle2 size={16} color="#10b981" /> Drastically reduces R&D prototyping lifecycle
                   </div>
                 </div>
               </motion.div>
 
               {/* 7. Elite Custom IIoT Ecosystem */}
-              <motion.div whileHover={{ y: -8, scale: 1.01 }} transition={{ duration: 0.2 }} style={{ padding: 32, borderRadius: 24, background: theme.panelBg, border: `1px solid ${theme.borderSoft}`, position: "relative", overflow: "hidden", boxShadow: isDarkMode ? "none" : "0 4px 20px rgba(0,0,0,0.05)" }}>
+              <motion.div whileHover={{ y: -8, scale: 1.01 }} transition={{ duration: 0.2 }} style={{ padding: 24, borderRadius: 24, background: theme.panelBg, border: `1px solid ${theme.borderSoft}`, position: "relative", overflow: "hidden", boxShadow: isDarkMode ? "none" : "0 4px 20px rgba(0,0,0,0.05)" }}>
                 <div style={{ position: "absolute", top: 16, right: 16, padding: "4px 12px", background: "rgba(234,179,8,0.15)", border: "1px solid rgba(234,179,8,0.3)", borderRadius: 999, fontSize: 11, fontWeight: 800, color: "#eab308", letterSpacing: 1, textTransform: "uppercase", zIndex: 20 }}>
                   Elite Offering
                 </div>
                 <div style={{ position: "absolute", bottom: -50, right: -50, width: 200, height: 200, background: "radial-gradient(circle, rgba(234,179,8,0.1) 0%, transparent 70%)", zIndex: 0 }}></div>
                 <div style={{ position: "relative", zIndex: 10 }}>
-                  <img src={eliteImg} alt="Elite Custom Ecosystem" style={{ width: "100%", height: 220, objectFit: "cover", borderRadius: 16, marginBottom: 24, border: `1px solid ${theme.borderSoft}` }} />
-                  <div style={{ width: 56, height: 56, borderRadius: 16, background: "rgba(234,179,8,0.15)", border: "1px solid rgba(234,179,8,0.3)", display: "flex", alignItems: "center", justifyContent: "center", marginBottom: 24 }}>
-                    <Network size={26} color="#eab308" />
+                  <img src={eliteImg} alt="Elite Custom Ecosystem" style={{ width: "100%", height: 180, objectFit: "cover", borderRadius: 16, marginBottom: 20, border: `1px solid ${theme.borderSoft}` }} />
+                  <div style={{ width: 48, height: 48, borderRadius: 16, background: "rgba(234,179,8,0.15)", border: "1px solid rgba(234,179,8,0.3)", display: "flex", alignItems: "center", justifyContent: "center", marginBottom: 16 }}>
+                    <Network size={24} color="#eab308" />
                   </div>
-                  <h3 style={{ fontSize: 24, fontWeight: 800, color: theme.textPrimary, marginBottom: 16 }}>Bespoke IIoT & Digital Twin Ecosystem</h3>
-                  <p style={{ fontSize: 15, color: theme.textSecondary, lineHeight: 1.7, marginBottom: 24 }}>
+                  <h3 style={{ fontSize: 20, fontWeight: 800, color: theme.textPrimary, marginBottom: 12 }}>Bespoke IIoT & Digital Twin Ecosystem</h3>
+                  <p style={{ fontSize: 13, color: theme.textSecondary, lineHeight: 1.6, marginBottom: 16 }}>
                     An end-to-end, fully customized Smart Factory architecture built specifically around your unique industrial requirements.
                   </p>
-                  <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
-                    <div style={{ display: "flex", alignItems: "center", gap: 12, fontSize: 14, fontWeight: 500, color: theme.checkText }}>
-                      <CheckCircle2 size={18} color="#eab308" /> 100% Flexible — not tightly coupled to legacy technology
+                  <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
+                    <div style={{ display: "flex", alignItems: "center", gap: 10, fontSize: 12, fontWeight: 500, color: theme.checkText }}>
+                      <CheckCircle2 size={16} color="#eab308" /> 100% Flexible — not tightly coupled to legacy technology
                     </div>
-                    <div style={{ display: "flex", alignItems: "center", gap: 12, fontSize: 14, fontWeight: 500, color: theme.checkText }}>
-                      <CheckCircle2 size={18} color="#eab308" /> Built precisely for what makes sense for your automation goals
+                    <div style={{ display: "flex", alignItems: "center", gap: 10, fontSize: 12, fontWeight: 500, color: theme.checkText }}>
+                      <CheckCircle2 size={16} color="#eab308" /> Built precisely for what makes sense for your automation goals
                     </div>
-                    <div style={{ display: "flex", alignItems: "center", gap: 12, fontSize: 14, fontWeight: 500, color: theme.checkText }}>
-                      <CheckCircle2 size={18} color="#eab308" /> Zero redundancy and no extra charges for unused components
+                    <div style={{ display: "flex", alignItems: "center", gap: 10, fontSize: 12, fontWeight: 500, color: theme.checkText }}>
+                      <CheckCircle2 size={16} color="#eab308" /> Zero redundancy and no extra charges for unused components
                     </div>
-                    <div style={{ display: "flex", alignItems: "center", gap: 12, fontSize: 14, fontWeight: 500, color: theme.checkText }}>
-                      <CheckCircle2 size={18} color="#eab308" /> Completely tailored AI models and Edge Computing logic
+                    <div style={{ display: "flex", alignItems: "center", gap: 10, fontSize: 12, fontWeight: 500, color: theme.checkText }}>
+                      <CheckCircle2 size={16} color="#eab308" /> Completely tailored AI models and Edge Computing logic
                     </div>
-                    <div style={{ display: "flex", alignItems: "center", gap: 12, fontSize: 14, fontWeight: 500, color: theme.checkText }}>
-                      <CheckCircle2 size={18} color="#eab308" /> Full ownership of a highly customized industrial architecture
+                    <div style={{ display: "flex", alignItems: "center", gap: 10, fontSize: 12, fontWeight: 500, color: theme.checkText }}>
+                      <CheckCircle2 size={16} color="#eab308" /> Full ownership of a highly customized industrial architecture
                     </div>
                   </div>
                 </div>
