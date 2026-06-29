@@ -1,7 +1,7 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { apiClient, mlClient } from './client';
 import { useBeltStore } from '@/store/useBeltStore';
-import { apiClient, mlClient } from './client';
+import { BELT_CATALOG, BeltEntry } from '@/data/beltCatalog';
 import type {
   BeltConfig,
   SensorReading,
@@ -30,6 +30,30 @@ export const useBeltConfigs = () =>
     queryKey: ['belts'],
     queryFn: () => apiClient.get('/belts').then((r) => r.data),
   });
+
+export const useAllBelts = () => {
+  const { data: customBelts = [] } = useBeltConfigs();
+  const allBelts: BeltEntry[] = [
+    ...BELT_CATALOG,
+    ...customBelts.map((c): BeltEntry => ({
+      id: c.id,
+      name: c.name,
+      area: 'Custom Configuration',
+      areaCode: 'CUST',
+      color: '#10b981',
+      material: c.materialType,
+      description: `Custom belt: ${c.width}mm x ${c.length}m`,
+    }))
+  ];
+  
+  const beltsByArea = allBelts.reduce<Record<string, BeltEntry[]>>((acc, belt) => {
+    if (!acc[belt.area]) acc[belt.area] = [];
+    acc[belt.area].push(belt);
+    return acc;
+  }, {});
+  
+  return { allBelts, beltsByArea };
+};
 
 export const useCreateBelt = () => {
   const qc = useQueryClient();

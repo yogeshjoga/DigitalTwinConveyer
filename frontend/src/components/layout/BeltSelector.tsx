@@ -2,7 +2,8 @@ import { useState, useRef, useEffect } from 'react';
 import { ChevronDown, Search, CheckCircle2 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useBeltStore } from '@/store/useBeltStore';
-import { BELT_CATALOG, getBeltsByArea, AREA_COLORS, type BeltEntry } from '@/data/beltCatalog';
+import { AREA_COLORS, type BeltEntry } from '@/data/beltCatalog';
+import { useAllBelts } from '@/api/hooks';
 
 export default function BeltSelector() {
   const { selectedBeltEntry, setSelectedBeltEntry } = useBeltStore();
@@ -28,8 +29,10 @@ export default function BeltSelector() {
     if (open) setTimeout(() => searchRef.current?.focus(), 80);
   }, [open]);
 
+  const { allBelts, beltsByArea } = useAllBelts();
+
   const filtered = search.trim()
-    ? BELT_CATALOG.filter(
+    ? allBelts.filter(
         (b) =>
           b.name.toLowerCase().includes(search.toLowerCase()) ||
           b.id.toLowerCase().includes(search.toLowerCase()) ||
@@ -38,7 +41,7 @@ export default function BeltSelector() {
       )
     : null; // null = show grouped
 
-  const grouped = getBeltsByArea();
+  const grouped = beltsByArea;
 
   const select = (entry: BeltEntry) => {
     setSelectedBeltEntry(entry);
@@ -111,7 +114,7 @@ export default function BeltSelector() {
                 className="flex-1 text-sm outline-none bg-transparent"
                 style={{ color: 'var(--text-primary)' }}
               />
-              <span className="text-[10px] text-muted">{BELT_CATALOG.length} belts</span>
+              <span className="text-[10px] text-muted">{allBelts.length} belts</span>
             </div>
 
             {/* Belt list */}

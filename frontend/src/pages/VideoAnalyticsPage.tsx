@@ -7,7 +7,7 @@ import {
 } from "lucide-react";
 import type { DefectType } from "@/types";
 import { type VideoEvent, VIDEO_EVENTS, DEFECT_COLORS, DEFECT_LABELS } from "@/data/videoAnalytics";
-import { BELT_CATALOG } from "@/data/beltCatalog";
+import { useAllBelts } from "@/api/hooks";
 import frontViewVideo from "@/assets/front_view.mp4";
 import tear1 from "@/assets/tears/tear_1.png";
 import tear2 from "@/assets/tears/tear_2.png";
@@ -51,7 +51,7 @@ function parseAndSearch(query: string): VideoEvent[] {
   if (beltIds.length === 0) {
     const matMap: [string, string][] = [["coal","coal"],["iron","iron"],["sinter","sinter"],["burden","burden"],["coke","coke"],["pellet","pellet"],["slag","slag"],["limestone","limestone"]];
     for (const [kw, mat] of matMap) {
-      if (q.includes(kw)) beltIds = [...beltIds, ...BELT_CATALOG.filter((b) => b.material.toLowerCase().includes(mat)).map((b) => b.id)];
+      if (q.includes(kw)) beltIds = [...beltIds, ...allBelts.filter((b) => b.material.toLowerCase().includes(mat)).map((b) => b.id)];
     }
   }
   let targetDate: string | null = null;
@@ -690,6 +690,8 @@ function StatsOverview() {
 }
 
 export default function VideoAnalyticsPage() {
+  const { allBelts } = useAllBelts();
+  const [activeTab, setActiveTab] = useState<"live" | "search">("live");
   const defaultDate = yesterdayStr();
   const [query,setQuery]                     = useState("");
   const [results,setResults]                 = useState<VideoEvent[]>([]);
@@ -841,7 +843,7 @@ export default function VideoAnalyticsPage() {
                   <select value={filterBelt} onChange={(e)=>setFilterBelt(e.target.value)} className="text-xs px-3 py-1.5 rounded-lg outline-none max-w-xs"
                     style={{ backgroundColor:"var(--color-surface)",border:"1px solid var(--color-border)",color:"var(--text-primary)" }}>
                     <option value="all">All Belts</option>
-                    {BELT_CATALOG.map((b)=><option key={b.id} value={b.id}>{b.name}</option>)}
+                    {allBelts.map((b)=><option key={b.id} value={b.id}>{b.name}</option>)}
                   </select>
                 </div>
               </div>

@@ -8,7 +8,7 @@ import {
   Eye, Bell, MapPin, Search, Plus,
 } from "lucide-react";
 import { useAlerts, useVisionDetections } from "@/api/hooks";
-import { BELT_CATALOG } from "@/data/beltCatalog";
+import { useAllBelts } from "@/api/hooks";
 
 // ── Engineer roster ────────────────────────────────────────────────────────────
 export interface Engineer {
@@ -123,7 +123,7 @@ function TagPicker({
   }, [detections, search, taggedIds]);
 
   const filteredBelts = useMemo(() =>
-    BELT_CATALOG.filter((b) =>
+    allBelts.filter((b) =>
       b.id.toLowerCase().includes(beltSearch.toLowerCase()) ||
       b.name.toLowerCase().includes(beltSearch.toLowerCase())
     ).slice(0, 10),
@@ -359,6 +359,7 @@ export default function WorkOrderAssignment({
   anomalyType = "General Maintenance",
   nextMaintenanceDays = 7,
 }: WorkOrderAssignmentProps) {
+  const { allBelts } = useAllBelts();
   const template = TASK_TEMPLATES[anomalyType] ?? TASK_TEMPLATES["General Maintenance"];
 
   const [taggedIssues, setTaggedIssues]       = useState<TaggedIssue[]>([]);

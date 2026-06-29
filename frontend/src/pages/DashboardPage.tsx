@@ -32,6 +32,8 @@ import { useBeltStore } from '@/store/useBeltStore';
 import { getThemeColors } from '@/lib/chartConfig';
 import { useTimeSeriesBuffer } from '@/lib/useTimeSeriesBuffer';
 import type { BeltEntry } from '@/data/beltCatalog';
+import { useAllBelts } from '@/api/hooks';
+import { Search } from 'lucide-react';
 
 ChartJS.register(CategoryScale, LinearScale, PointElement, LineElement, Filler, Tooltip, Legend);
 
@@ -152,6 +154,64 @@ function useBeltAwareHistory(belt: BeltEntry) {
 }
 
 ChartJS.register(CategoryScale, LinearScale, PointElement, LineElement, Filler, Tooltip, Legend);
+
+function DashboardQuickSearch() {
+  const [query, setQuery] = useState('');
+  const [focused, setFocused] = useState(false);
+  const { allBelts } = useAllBelts();
+  const { setSelectedBeltEntry } = useBeltStore();
+
+  const filtered = query.trim() ? allBelts.filter(b => 
+    b.name.toLowerCase().includes(query.toLowerCase()) || 
+    b.id.toLowerCase().includes(query.toLowerCase())
+  ).slice(0, 5) : [];
+
+  return (
+    <div className="relative hidden md:block">
+      <div className="flex items-center gap-2 px-3 py-2 rounded-xl border transition-all"
+           style={{ backgroundColor: 'var(--color-surface)', borderColor: focused ? 'var(--color-brand)' : 'var(--color-border)' }}>
+        <Search size={14} className="text-muted" />
+        <input 
+          type="text" 
+          placeholder="Search belts..." 
+          value={query}
+          onChange={(e) => setQuery(e.target.value)}
+          onFocus={() => setFocused(true)}
+          onBlur={() => setTimeout(() => setFocused(false), 200)}
+          className="bg-transparent text-sm outline-none w-48"
+          style={{ color: 'var(--text-primary)' }}
+        />
+      </div>
+      
+      <AnimatePresence>
+        {focused && query.trim() && (
+          <motion.div 
+            initial={{ opacity: 0, y: 4 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: 4 }}
+            className="absolute top-full mt-2 w-full z-50 rounded-xl shadow-xl border overflow-hidden"
+            style={{ backgroundColor: 'var(--color-panel)', borderColor: 'var(--color-border)' }}
+          >
+            {filtered.length === 0 ? (
+              <div className="px-3 py-4 text-xs text-center text-muted">No belts found</div>
+            ) : (
+              <div className="py-1">
+                {filtered.map(belt => (
+                  <button 
+                    key={belt.id}
+                    onClick={() => { setSelectedBeltEntry(belt); setQuery(''); setFocused(false); }}
+                    className="w-full text-left px-3 py-2 hover:bg-black/5 dark:hover:bg-white/5 transition-colors flex flex-col"
+                  >
+                    <span className="text-xs font-bold" style={{ color: belt.color }}>{belt.id}</span>
+                    <span className="text-xs text-primary truncate">{belt.name}</span>
+                  </button>
+                ))}
+              </div>
+            )}
+          </motion.div>
+        )}
+      </AnimatePresence>
+    </div>
+  );
+}
 
 export default function DashboardPage() {
   const { data: alerts }  = useAlerts();
@@ -275,6 +335,9 @@ export default function DashboardPage() {
 
         {/* Action buttons */}
         <div className="flex items-center gap-2">
+          {/* Dashboard quick search */}
+          <DashboardQuickSearch />
+
           {/* Clear Defects — demo reset button */}
           <button
             onClick={() => { clearDefects.mutate(); clearGate.mutate(); }}

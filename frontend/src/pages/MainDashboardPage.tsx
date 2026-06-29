@@ -8,7 +8,8 @@ import {
 } from 'lucide-react';
 import { useBeltStore } from '@/store/useBeltStore';
 import { useAlerts, useLiveSensors } from '@/api/hooks';
-import { BELT_CATALOG, BELT_AREAS, AREA_COLORS, getBeltsByArea } from '@/data/beltCatalog';
+import { BELT_AREAS, AREA_COLORS, type BeltEntry } from '@/data/beltCatalog';
+import { useAllBelts } from '@/api/hooks';
 import { VIDEO_EVENTS, DEFECT_COLORS, DEFECT_LABELS } from '@/data/videoAnalytics';
 import type { DefectType } from '@/types';
 
@@ -42,11 +43,11 @@ function Sparkline({ values, color, h = 32 }: { values: number[]; color: string;
 }
 
 // ── Per-belt defect summary ───────────────────────────────────────────────────
-function useBeltDefectStats() {
+function useBeltDefectStats(allBelts: BeltEntry[]) {
   return useMemo(() => {
     const now = Date.now();
     const last24h = VIDEO_EVENTS.filter((e) => now - new Date(e.timestamp).getTime() < 86_400_000);
-    return BELT_CATALOG.map((belt) => {
+    return allBelts.map((belt) => {
       const events = last24h.filter((e) => e.beltId === belt.id);
       const high   = events.filter((e) => e.severity === 'high').length;
       const medium = events.filter((e) => e.severity === 'medium').length;
@@ -67,12 +68,12 @@ function useBeltDefectStats() {
       });
       return { belt, total, high, medium, low, byType, hourly };
     });
-  }, []);
+  }, [allBelts]);
 }
 
 // ── Fleet-wide totals ─────────────────────────────────────────────────────────
-function useFleetStats() {
-  const beltStats = useBeltDefectStats();
+function useFleetStats(allBelts: BeltEntry[]) {
+  const beltStats = useBeltDefectStats(allBelts);
   return useMemo(() => {
     const totalDefects = beltStats.reduce((s, b) => s + b.total, 0);
     const totalHigh    = beltStats.reduce((s, b) => s + b.high, 0);
@@ -163,17 +164,19 @@ function BeltCard({ stat, onClick }: {
 
 // ── Main page ─────────────────────────────────────────────────────────────────
 export default function MainDashboardPage() {
-  const navigate          = useNavigate();
-  const setSelectedBelt   = useBeltStore((s) => s.setSelectedBeltEntry);
+  const { allBelts, beltsByArea } = useAllBelts();
   const { data: alerts }  = useAlerts();
   const { data: live }    = useLiveSensors();
-  const { totalDefects, totalHigh, totalMedium, totalLow, activeBelts, criticalBelts, beltStats } = useFleetStats();
-  const beltsByArea       = getBeltsByArea();
+  const { totalDefects, totalHigh, totalMedium, totalLow, activeBelts, beltStats } = useFleetStats(allBelts);
+  const navigate          = useNavigate();
+  const setSelectedBelt   = useBeltStore((s) => s.setSelectedBeltEntry);
+  const theme             = useBeltStore((s) => s.theme);
+  const isDark            = theme === 'dark';
 
   const criticalAlerts = alerts?.filter((a) => a.severity === 'critical' && !a.acknowledged).length ?? 0;
 
   const handleBeltClick = (beltId: string) => {
-    const entry = BELT_CATALOG.find((b) => b.id === beltId);
+    const entry = allBelts.find((b) => b.id === beltId);
     if (entry) {
       setSelectedBelt(entry);
       navigate('/dashboard');
@@ -192,31 +195,38 @@ export default function MainDashboardPage() {
 
   return (
     <div className="space-y-6">
-      {/* ── Header ── */}
-      <div className="flex items-start justify-between flex-wrap gap-3">
-        <div>
-          <h1 className="text-2xl font-bold text-primary">Fleet Overview</h1>
-          <p className="text-secondary text-sm mt-1">
-            All {BELT_CATALOG.length} conveyor belts · last 24 hours · click any belt to open its dashboard
-          </p>
+      {/* ── Overview Container ── */}
+      <div className="p-6 sm:p-8 rounded-[2rem] space-y-6 shadow-lg border"
+           style={{ 
+             backgroundColor: isDark ? '#1e293b' : '#f1f5f9', 
+             borderColor: isDark ? '#334155' : '#e2e8f0',
+             color: 'var(--text-primary)' 
+           }}>
+        {/* ── Header ── */}
+        <div className="flex items-start justify-between flex-wrap gap-3">
+          <div>
+            <h1 className="text-2xl font-bold text-primary">Fleet Overview</h1>
+            <p className="text-secondary text-sm mt-1">
+            All {allBelts.length} conveyor belts · last 24 hours · click any belt to open its dashboard
+            </p>
+          </div>
+          <div className="text-xs text-muted font-mono">
+            {new Date().toLocaleString()}
+          </div>
         </div>
-        <div className="text-xs text-muted font-mono">
-          {new Date().toLocaleString()}
-        </div>
-      </div>
 
-      {/* ── Fleet KPI strip ── */}
-      <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3">
-        {[
-          { label: 'Total Belts',     value: BELT_CATALOG.length, icon: Activity,      color: '#3b82f6' },
+        {/* ── Fleet KPI strip ── */}
+        <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3">
+          {[
+            { label: 'Total Belts',     value: allBelts.length, icon: Activity,      color: '#3b82f6' },
           { label: 'Active Defects',  value: activeBelts,         icon: AlertTriangle, color: activeBelts > 0 ? '#f59e0b' : '#22c55e' },
           { label: 'Critical',        value: totalHigh,           icon: AlertTriangle, color: totalHigh > 0 ? '#ef4444' : '#22c55e' },
           { label: 'Medium',          value: totalMedium,         icon: AlertTriangle, color: totalMedium > 0 ? '#f59e0b' : '#22c55e' },
           { label: 'Low',             value: totalLow,            icon: CheckCircle2,  color: '#22c55e' },
           { label: 'System Alerts',   value: criticalAlerts,      icon: Shield,        color: criticalAlerts > 0 ? '#ef4444' : '#22c55e' },
         ].map(({ label, value, icon: Icon, color }) => (
-          <div key={label} className="rounded-xl p-3 flex flex-col gap-1"
-            style={{ backgroundColor: 'var(--color-panel)', border: `1px solid ${color}33` }}>
+          <div key={label} className="rounded-xl p-3 flex flex-col gap-1 shadow-sm"
+            style={{ backgroundColor: isDark ? '#0f172a' : '#ffffff', border: `1px solid ${color}33` }}>
             <div className="flex items-center justify-between">
               <span className="text-[10px] text-muted font-medium">{label}</span>
               <Icon size={13} style={{ color }} />
@@ -227,8 +237,8 @@ export default function MainDashboardPage() {
       </div>
 
       {/* ── Defect category breakdown ── */}
-      <div className="rounded-2xl p-4"
-        style={{ backgroundColor: 'var(--color-panel)', border: '1px solid var(--color-border)' }}>
+      <div className="rounded-2xl p-4 shadow-sm"
+        style={{ backgroundColor: isDark ? '#0f172a' : '#ffffff', border: isDark ? '1px solid #334155' : '1px solid #e2e8f0' }}>
         <h2 className="text-sm font-semibold text-secondary mb-3">Defect Categories (24h — all belts)</h2>
         <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
           {defectTypeTotals.map(({ type, count }) => {
@@ -237,9 +247,9 @@ export default function MainDashboardPage() {
             const pct   = totalDefects > 0 ? Math.round((count / totalDefects) * 100) : 0;
             return (
               <div key={type} className="rounded-xl p-3 space-y-2"
-                style={{ backgroundColor: 'var(--color-surface)', border: `1px solid ${color}33` }}>
+                style={{ backgroundColor: isDark ? '#1e293b' : '#f8fafc', border: `1px solid ${color}33` }}>
                 <div className="flex items-center gap-2">
-                  <div className="w-7 h-7 rounded-lg flex items-center justify-center"
+                  <div className="w-7 h-7 rounded-lg flex items-center justify-center shadow-sm"
                     style={{ background: color + '22' }}>
                     <Icon size={14} style={{ color }} />
                   </div>
@@ -250,7 +260,7 @@ export default function MainDashboardPage() {
                   <span className="text-[10px] text-muted">{pct}%</span>
                 </div>
                 {/* Mini bar */}
-                <div className="h-1 rounded-full overflow-hidden" style={{ backgroundColor: 'var(--color-border)' }}>
+                <div className="h-1 rounded-full overflow-hidden" style={{ backgroundColor: isDark ? '#334155' : '#e2e8f0' }}>
                   <div className="h-full rounded-full transition-all" style={{ width: `${pct}%`, backgroundColor: color }} />
                 </div>
                 {/* Severity split */}
@@ -277,8 +287,8 @@ export default function MainDashboardPage() {
 
       {/* ── Live sensor snapshot ── */}
       {live && (
-        <div className="rounded-2xl p-4"
-          style={{ backgroundColor: 'var(--color-panel)', border: '1px solid var(--color-border)' }}>
+        <div className="rounded-2xl p-4 shadow-sm"
+          style={{ backgroundColor: isDark ? '#0f172a' : '#ffffff', border: isDark ? '1px solid #334155' : '1px solid #e2e8f0' }}>
           <h2 className="text-sm font-semibold text-secondary mb-3">Live Sensor Snapshot</h2>
           <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3">
             {[
@@ -293,7 +303,7 @@ export default function MainDashboardPage() {
               const color = num >= crit ? '#ef4444' : num >= warn ? '#f59e0b' : '#22c55e';
               return (
                 <div key={label} className="rounded-xl p-3"
-                  style={{ backgroundColor: 'var(--color-surface)', border: `1px solid ${color}33` }}>
+                  style={{ backgroundColor: isDark ? '#1e293b' : '#f8fafc', border: `1px solid ${color}33` }}>
                   <div className="flex items-center justify-between mb-1">
                     <span className="text-[10px] text-muted">{label}</span>
                     <Icon size={11} style={{ color }} />
@@ -306,6 +316,7 @@ export default function MainDashboardPage() {
           </div>
         </div>
       )}
+      </div>
 
       {/* ── Belt grid by area ── */}
       {Object.entries(beltsByArea).map(([area, belts]) => {
@@ -315,28 +326,32 @@ export default function MainDashboardPage() {
         const areaHigh  = areaStats.reduce((s, b) => s + b.high, 0);
 
         return (
-          <div key={area}>
+          <div key={area} className="p-4 sm:p-5 rounded-2xl border space-y-4"
+               style={{ backgroundColor: `${areaColor}08`, borderColor: `${areaColor}22` }}>
             {/* Area header */}
-            <div className="flex items-center gap-3 mb-3">
-              <div className="h-px flex-1" style={{ backgroundColor: 'var(--color-border)' }} />
-              <div className="flex items-center gap-2 px-3 py-1 rounded-full"
-                style={{ backgroundColor: areaColor + '18', border: `1px solid ${areaColor}33` }}>
-                <span className="w-2 h-2 rounded-full" style={{ backgroundColor: areaColor }} />
-                <span className="text-xs font-bold" style={{ color: areaColor }}>{area}</span>
-                <span className="text-[10px] text-muted">{belts.length} belts</span>
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-2.5 px-3 py-1.5 rounded-xl border shadow-sm"
+                style={{ backgroundColor: 'var(--color-surface)', borderColor: `${areaColor}33` }}>
+                <span className="w-2.5 h-2.5 rounded-full shadow-sm" style={{ backgroundColor: areaColor }} />
+                <span className="text-sm font-bold tracking-tight" style={{ color: areaColor }}>{area}</span>
+                <div className="w-px h-4 mx-1" style={{ backgroundColor: 'var(--color-border)' }} />
+                <span className="text-xs font-semibold text-muted">{belts.length} belts</span>
+                
+                {(areaHigh > 0 || areaTotal > 0) && (
+                  <div className="w-px h-4 mx-1" style={{ backgroundColor: 'var(--color-border)' }} />
+                )}
                 {areaHigh > 0 && (
-                  <span className="text-[9px] font-bold px-1.5 py-0.5 rounded-full bg-red-500 text-white">
+                  <span className="text-[10px] font-bold px-2 py-0.5 rounded-md bg-red-500 text-white shadow-sm">
                     {areaHigh} critical
                   </span>
                 )}
                 {areaTotal > 0 && areaHigh === 0 && (
-                  <span className="text-[9px] font-bold px-1.5 py-0.5 rounded-full"
+                  <span className="text-[10px] font-bold px-2 py-0.5 rounded-md shadow-sm"
                     style={{ background: '#f59e0b22', color: '#f59e0b' }}>
                     {areaTotal} defects
                   </span>
                 )}
               </div>
-              <div className="h-px flex-1" style={{ backgroundColor: 'var(--color-border)' }} />
             </div>
 
             {/* Belt cards grid */}
