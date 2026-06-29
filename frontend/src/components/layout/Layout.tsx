@@ -6,6 +6,8 @@ import AIChatPanel from '@/components/ai/AIChatPanel';
 import PLCNotificationToast from '@/components/ui/PLCNotificationToast';
 import { usePLCState } from '@/api/hooks';
 import { useEffect } from 'react';
+import HandTracking from '@/components/HandTracking';
+import VirtualCursor from '@/components/VirtualCursor';
 
 /** Syncs backend PLC state → global Zustand store on every poll (1 s).
  *  Mounted in Layout so it runs on every page — not just PLCPage. */
@@ -24,6 +26,7 @@ function PLCStateSync() {
 
 export default function Layout() {
   const sidebarOpen = useBeltStore((s) => s.sidebarOpen);
+  const visionControl = useBeltStore((s) => s.visionControl);
 
   return (
     <div
@@ -44,6 +47,12 @@ export default function Layout() {
       <AIChatPanel />
       <PLCNotificationToast />
       <PLCStateSync />
+      {visionControl && (
+        <>
+          <HandTracking />
+          <VirtualCursor />
+        </>
+      )}
     </div>
   );
 }

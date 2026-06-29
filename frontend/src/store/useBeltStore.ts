@@ -102,6 +102,9 @@ interface BeltStore {
   plcStopReason: string | null;
   setPLCRunning: (running: boolean, reason?: string) => void;
 
+  visionControl: boolean;
+  toggleVisionControl: () => void;
+
   // ── UI Settings ───────────────────────────────────────────────────────────
   uiSettings: UISettings;
   setUISettings: (patch: Partial<UISettings>) => void;
@@ -182,6 +185,9 @@ export const useBeltStore = create<BeltStore>((set) => ({
   plcStopReason: null,
   setPLCRunning: (running, reason) =>
     set({ plcBeltRunning: running, plcStopReason: running ? null : (reason ?? 'Manual stop') }),
+
+  visionControl: false,
+  toggleVisionControl: () => set((s) => ({ visionControl: !s.visionControl })),
 
   uiSettings: getInitialUISettings(),
   setUISettings: (patch) =>

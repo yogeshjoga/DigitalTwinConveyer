@@ -13,12 +13,14 @@ import {
   AlertOctagon,
   Power,
   ClipboardList,
+  Webcam,
 } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import BeltScene, { type CameraPreset } from '@/components/three/BeltScene';
 import { useLiveSensors, useThermalZones, useVisionDetections, usePLCCommand } from '@/api/hooks';
 import { useBeltStore } from '@/store/useBeltStore';
 import { motion, AnimatePresence } from 'framer-motion';
+import React, { useCallback, useEffect } from 'react';
 
 // ── Camera view definitions ────────────────────────────────────────────────────
 const CAMERA_VIEWS: Array<{
@@ -89,6 +91,29 @@ export default function DigitalTwinPage() {
     sendCmd.mutate({ command: 'START', operator: 'Digital Twin Operator', reason: 'Start from Digital Twin' });
     setPLCRunning(true);
   };
+
+  const handleSwipeLeft = useCallback(() => {
+    setCameraPreset((prev) => {
+      const idx = CAMERA_VIEWS.findIndex((v) => v.preset === prev);
+      return CAMERA_VIEWS[(idx - 1 + CAMERA_VIEWS.length) % CAMERA_VIEWS.length].preset;
+    });
+  }, []);
+
+  const handleSwipeRight = useCallback(() => {
+    setCameraPreset((prev) => {
+      const idx = CAMERA_VIEWS.findIndex((v) => v.preset === prev);
+      return CAMERA_VIEWS[(idx + 1) % CAMERA_VIEWS.length].preset;
+    });
+  }, []);
+
+  useEffect(() => {
+    window.addEventListener('vision-swipe-left', handleSwipeLeft);
+    window.addEventListener('vision-swipe-right', handleSwipeRight);
+    return () => {
+      window.removeEventListener('vision-swipe-left', handleSwipeLeft);
+      window.removeEventListener('vision-swipe-right', handleSwipeRight);
+    };
+  }, [handleSwipeLeft, handleSwipeRight]);
 
   return (
     <div className="space-y-4">

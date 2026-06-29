@@ -1,4 +1,4 @@
-import { Bell, Wifi, WifiOff, Sun, Moon, X, CheckCheck, AlertOctagon, AlertTriangle, Info } from 'lucide-react';
+import { Bell, Wifi, WifiOff, Sun, Moon, X, CheckCheck, AlertOctagon, AlertTriangle, Info, Webcam } from 'lucide-react';
 import { useState, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -23,6 +23,8 @@ export default function Topbar() {
   const theme              = useBeltStore((s) => s.theme);
   const toggleTheme        = useBeltStore((s) => s.toggleTheme);
   const selectedBelt       = useBeltStore((s) => s.selectedBeltEntry);
+  const visionControl      = useBeltStore((s) => s.visionControl);
+  const toggleVisionControl= useBeltStore((s) => s.toggleVisionControl);
 
   const [showPanel, setShowPanel] = useState(false);
   const [tab, setTab]             = useState<'system' | 'plc'>('plc');
@@ -280,6 +282,20 @@ export default function Topbar() {
             )}
           </AnimatePresence>
         </div>
+
+        {/* Vision AI toggle */}
+        <button
+          onClick={toggleVisionControl}
+          className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg transition-colors text-secondary hover:text-primary hover:bg-black/5 dark:hover:bg-white/5"
+          style={{ 
+            color: visionControl ? '#22c55e' : undefined,
+            backgroundColor: visionControl ? 'rgba(34, 197, 94, 0.1)' : undefined 
+          }}
+          aria-label="Toggle Vision AI"
+        >
+          <Webcam size={17} />
+          <span className="text-xs font-bold hidden lg:block">Vision AI</span>
+        </button>
 
         {/* Theme toggle */}
         <button
