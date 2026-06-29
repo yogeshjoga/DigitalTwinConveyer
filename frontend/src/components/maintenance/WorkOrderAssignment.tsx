@@ -93,6 +93,7 @@ function TagPicker({
   onAdd: (issue: TaggedIssue) => void;
   onRemove: (id: string) => void;
 }) {
+  const { allBelts }         = useAllBelts();
   const { data: alerts }     = useAlerts();
   const { data: detections } = useVisionDetections();
   const [tab, setTab]        = useState<"alerts"|"vision"|"belt">("alerts");
@@ -127,7 +128,7 @@ function TagPicker({
       b.id.toLowerCase().includes(beltSearch.toLowerCase()) ||
       b.name.toLowerCase().includes(beltSearch.toLowerCase())
     ).slice(0, 10),
-  [beltSearch]);
+  [beltSearch, allBelts]);
 
   const severityColor = (s: string) =>
     s === "critical" ? "#ef4444" : s === "warning" ? "#f59e0b" : "#27a372";
