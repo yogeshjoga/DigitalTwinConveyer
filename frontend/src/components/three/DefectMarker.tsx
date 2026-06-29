@@ -4,10 +4,12 @@ import { Html } from '@react-three/drei';
 import { useNavigate } from 'react-router-dom';
 import * as THREE from 'three';
 import type { VisionDetection } from '@/types';
+import { useBeltStore } from '@/store/useBeltStore';
 
 interface DefectMarkerProps {
   detection: VisionDetection;
   beltLength: number;
+  beltSpeed: number;
 }
 
 const severityColor: Record<string, string> = {
@@ -23,20 +25,51 @@ const DEFECT_LABELS: Record<string, string> = {
   layer_peeling: 'Layer Peeling',
 };
 
-export default function DefectMarker({ detection, beltLength }: DefectMarkerProps) {
+export default function DefectMarker({ detection, beltLength, beltSpeed }: DefectMarkerProps) {
   const meshRef  = useRef<THREE.Mesh>(null);
+  const groupRef = useRef<THREE.Group>(null);
   const navigate = useNavigate();
+  const plcRunning = useBeltStore((s) => s.plcBeltRunning);
+  
+  // Base initial distance along the loop (0 to beltLength on top)
+  const initialD = detection.position.x * beltLength;
+  const offsetRef = useRef(0);
 
-  // Pulse animation
-  useFrame(({ clock }) => {
+  // Pulse animation and movement
+  useFrame(({ clock }, delta) => {
     if (meshRef.current) {
       meshRef.current.scale.setScalar(
         1 + Math.sin(clock.elapsedTime * 3) * 0.15
       );
     }
+    if (groupRef.current) {
+      if (plcRunning) {
+        // Match the visual texture scrolling speed: delta * speed * 0.15 (offset) * 1.5 (scale)
+        offsetRef.current += delta * beltSpeed * 0.225;
+      }
+      
+      const loopLen = beltLength * 2;
+      let currentD = (initialD + offsetRef.current) % loopLen;
+      if (currentD < 0) currentD += loopLen; // handle potential negative
+      
+      let currentZ;
+      let currentY;
+      
+      if (currentD < beltLength) {
+        // Top surface (moving forward)
+        currentZ = -beltLength / 2 + currentD;
+        currentY = 0.15;
+      } else {
+        // Bottom surface (moving backward)
+        currentZ = beltLength / 2 - (currentD - beltLength);
+        currentY = -0.7; // Just below the return belt which is at -0.55
+      }
+      
+      groupRef.current.position.z = currentZ;
+      groupRef.current.position.y = currentY;
+    }
   });
 
-  const z     = -beltLength / 2 + detection.position.x * beltLength;
   const x     = (detection.position.y - 0.5) * 1.0;
   const color = severityColor[detection.severity];
 
@@ -46,7 +79,7 @@ export default function DefectMarker({ detection, beltLength }: DefectMarkerProp
   };
 
   return (
-    <group position={[x, 0.15, z]}>
+    <group ref={groupRef} position={[x, 0.15, -beltLength / 2 + initialD]}>
       <mesh ref={meshRef}>
         <ringGeometry args={[0.12, 0.18, 16]} />
         <meshBasicMaterial color={color} side={THREE.DoubleSide} />

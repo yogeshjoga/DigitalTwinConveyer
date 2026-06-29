@@ -119,7 +119,7 @@ function SceneContent({
       ))}
 
       {detections.filter((d) => d.defectType !== 'none').map((d) => (
-        <DefectMarker key={d.id} detection={d} beltLength={beltLength} />
+        <DefectMarker key={d.id} detection={d} beltLength={beltLength} beltSpeed={beltSpeed} />
       ))}
 
       {showMaterial && (
