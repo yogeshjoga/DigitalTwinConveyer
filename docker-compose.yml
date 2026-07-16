@@ -1,0 +1,35 @@
+version: '3.8'
+
+services:
+  # PostgreSQL with TimescaleDB and pgvector included
+  db:
+    image: timescale/timescaledb-ha:pg15-latest
+    container_name: digitaltwin_db
+    environment:
+      POSTGRES_DB: digitaltwin
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgrespassword
+    ports:
+      - "5432:5432"
+    volumes:
+      - pgdata:/home/postgres/pgdata/data
+    restart: always
+
+  # MinIO for Object Storage (Images, Video Snippets)
+  minio:
+    image: minio/minio:latest
+    container_name: digitaltwin_minio
+    environment:
+      MINIO_ROOT_USER: minioadmin
+      MINIO_ROOT_PASSWORD: minioadminpassword
+    command: server /data --console-address ":9001"
+    ports:
+      - "9000:9000"
+      - "9001:9001"
+    volumes:
+      - minio_data:/data
+    restart: always
+
+volumes:
+  pgdata:
+  minio_data:
